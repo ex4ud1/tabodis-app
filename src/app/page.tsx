@@ -1,13 +1,39 @@
 import { createServerClient } from "@/lib/supabase/server";
 
+// Always render at request-time so env-driven Supabase fetch is fresh
+// and we never block builds on missing env vars.
+export const dynamic = "force-dynamic";
+
+type PropertyRow = {
+  id: string;
+  slug: string;
+  title: string;
+  city: string;
+  price: number;
+  type: string;
+};
+
+async function fetchProperties(): Promise<PropertyRow[] | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return null;
+  }
+  try {
+    const supabase = await createServerClient();
+    const { data, error } = await supabase
+      .from("properties")
+      .select("id, slug, title, city, price, type")
+      .eq("status", "live")
+      .order("featured", { ascending: false })
+      .limit(5);
+    if (error) return null;
+    return data as PropertyRow[];
+  } catch {
+    return null;
+  }
+}
+
 export default async function HomePage() {
-  const supabase = await createServerClient();
-  const { data: properties } = await supabase
-    .from("properties")
-    .select("id, slug, title, city, price, type")
-    .eq("status", "live")
-    .order("featured", { ascending: false })
-    .limit(5);
+  const properties = await fetchProperties();
 
   return (
     <main id="main" className="mx-auto max-w-5xl px-6 py-24">
@@ -27,7 +53,12 @@ export default async function HomePage() {
 
       <section className="rounded-2xl border border-line-soft bg-paper p-8">
         <h2 className="mb-6 font-serif text-3xl text-ink">Properties from Supabase</h2>
-        {properties && properties.length > 0 ? (
+        {properties === null ? (
+          <p className="text-ink-soft">
+            Supabase connection not configured. Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+            <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in Vercel project settings.
+          </p>
+        ) : properties.length > 0 ? (
           <ul className="divide-y divide-line-soft">
             {properties.map((p) => (
               <li key={p.id} className="flex items-baseline justify-between py-3">
