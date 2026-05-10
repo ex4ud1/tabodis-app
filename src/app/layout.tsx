@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Manrope, JetBrains_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const instrumentSerif = Instrument_Serif({
@@ -85,6 +86,7 @@ export default function RootLayout({
           Saltar al contenido
         </a>
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
