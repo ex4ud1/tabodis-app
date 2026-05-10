@@ -20,30 +20,43 @@ export default async function ReviewsAdmin({
     status: string;
     created_at: string | null;
   };
-  const { data } = (await supabase
-    .from("reviews")
-    .select("id, author_name, city, rating, services, body, status, created_at")
-    .eq("status", filter)
-    .order("created_at", { ascending: false })) as { data: Row[] | null };
-  const rows = data ?? [];
+  const [list, pendCt, apprCt, rejCt] = await Promise.all([
+    supabase
+      .from("reviews")
+      .select("id, author_name, city, rating, services, body, status, created_at")
+      .eq("status", filter)
+      .order("created_at", { ascending: false }),
+    supabase.from("reviews").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("reviews").select("id", { count: "exact", head: true }).eq("status", "approved"),
+    supabase.from("reviews").select("id", { count: "exact", head: true }).eq("status", "rejected"),
+  ]);
+  const rows = ((list.data as Row[] | null) ?? []);
+  const counts = { pending: pendCt.count ?? 0, approved: apprCt.count ?? 0, rejected: rejCt.count ?? 0 };
 
   return (
     <>
       <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
         <h1 className="font-serif text-5xl tracking-tight text-ink">Reseñas</h1>
         <div className="flex gap-1 bg-paper border border-line-soft p-1 rounded-full">
-          {(["pending", "approved", "rejected"] as const).map((s) => (
-            <a
-              key={s}
-              href={`/admin/reviews?status=${s}`}
-              className={[
-                "px-4 py-1.5 rounded-full text-[12px]",
-                filter === s ? "bg-ink text-paper" : "text-ink-soft hover:text-ink",
-              ].join(" ")}
-            >
-              {s === "pending" ? "Pendientes" : s === "approved" ? "Aprobadas" : "Rechazadas"}
-            </a>
-          ))}
+          {(["pending", "approved", "rejected"] as const).map((s) => {
+            const label = s === "pending" ? "Pendientes" : s === "approved" ? "Aprobadas" : "Rechazadas";
+            return (
+              <a
+                key={s}
+                href={`/admin/reviews?status=${s}`}
+                className={[
+                  "px-4 py-1.5 rounded-full text-[12px] inline-flex items-center gap-1.5",
+                  filter === s ? "bg-ink text-paper" : "text-ink-soft hover:text-ink",
+                ].join(" ")}
+              >
+                {label}
+                <span className={[
+                  "font-mono text-[10px] px-1.5 py-0.5 rounded-full",
+                  filter === s ? "bg-paper/20" : "bg-bg-2",
+                ].join(" ")}>{counts[s]}</span>
+              </a>
+            );
+          })}
         </div>
       </div>
 

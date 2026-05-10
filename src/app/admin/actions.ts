@@ -3,17 +3,28 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/utils";
 
 const WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
 
-async function getAuthedSupabase() {
-  const supabase = await createServerClient();
+/**
+ * Mutations use the service-role admin client to bypass RLS subtleties,
+ * but we always verify the caller is an authenticated workspace member first.
+ */
+async function requireMember() {
+  const supa = await createServerClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
-  return { supabase, user };
+  } = await supa.auth.getUser();
+  if (!user) throw new Error("Unauthorized: not signed in");
+  const { data: member } = await supa
+    .from("workspace_members")
+    .select("workspace_id, role")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!member) throw new Error("Unauthorized: not a workspace member");
+  return { user, member, admin: createAdminClient() };
 }
 
 function bumpAll() {
@@ -66,13 +77,13 @@ function readPropForm(form: FormData): PropPayload {
 }
 
 export async function createProperty(form: FormData) {
-  const { supabase } = await getAuthedSupabase();
+  const { admin } = await requireMember();
   const data = readPropForm(form);
   if (!data.title || !data.price || !data.city) {
-    return { error: "Faltan título, precio o ciudad" };
+    throw new Error("Faltan título, precio o ciudad");
   }
   const slug = slugify(data.title) + "-" + Date.now().toString(36).slice(-4);
-  const { data: row, error } = await supabase
+  const { data: row, error } = await admin
     .from("properties")
     .insert({
       workspace_id: WORKSPACE_ID,
@@ -93,15 +104,18 @@ export async function createProperty(form: FormData) {
     })
     .select("id")
     .single();
-  if (error) return { error: error.message };
+  if (error || !row) {
+    console.error("[createProperty] insert failed", error);
+    throw new Error(error?.message ?? "No se pudo crear la propiedad");
+  }
   bumpAll();
-  redirect(`/admin/properties/${row!.id}?ok=1`);
+  redirect(`/admin/properties/${row.id}?ok=1`);
 }
 
 export async function updateProperty(id: string, form: FormData) {
-  const { supabase } = await getAuthedSupabase();
+  const { admin } = await requireMember();
   const data = readPropForm(form);
-  const { error } = await supabase
+  const { error } = await admin
     .from("properties")
     .update({
       title: data.title,
@@ -119,15 +133,21 @@ export async function updateProperty(id: string, form: FormData) {
       published_at: data.status === "live" ? new Date().toISOString() : null,
     })
     .eq("id", id);
-  if (error) return { error: error.message };
+  if (error) {
+    console.error("[updateProperty] failed", error);
+    throw new Error(error.message);
+  }
   bumpAll();
   redirect(`/admin/properties/${id}?ok=1`);
 }
 
 export async function deleteProperty(id: string) {
-  const { supabase } = await getAuthedSupabase();
-  const { error } = await supabase.from("properties").delete().eq("id", id);
-  if (error) return { error: error.message };
+  const { admin } = await requireMember();
+  const { error } = await admin.from("properties").delete().eq("id", id);
+  if (error) {
+    console.error("[deleteProperty] failed", error);
+    throw new Error(error.message);
+  }
   bumpAll();
   redirect("/admin/properties");
 }
@@ -135,12 +155,15 @@ export async function deleteProperty(id: string) {
 // ─── Reviews ───────────────────────────────────────────────────────────────────
 
 export async function moderateReview(id: string, action: "approve" | "reject") {
-  const { supabase } = await getAuthedSupabase();
-  const { error } = await supabase
+  const { admin } = await requireMember();
+  const { error } = await admin
     .from("reviews")
     .update({ status: action === "approve" ? "approved" : "rejected" })
     .eq("id", id);
-  if (error) return { error: error.message };
+  if (error) {
+    console.error("[moderateReview] failed", error);
+    throw new Error(error.message);
+  }
   bumpAll();
 }
 
@@ -150,8 +173,11 @@ export async function setLeadStatus(
   id: string,
   status: "new" | "contacted" | "qualified" | "closed",
 ) {
-  const { supabase } = await getAuthedSupabase();
-  const { error } = await supabase.from("leads").update({ status }).eq("id", id);
-  if (error) return { error: error.message };
+  const { admin } = await requireMember();
+  const { error } = await admin.from("leads").update({ status }).eq("id", id);
+  if (error) {
+    console.error("[setLeadStatus] failed", error);
+    throw new Error(error.message);
+  }
   revalidatePath("/admin/leads");
 }
