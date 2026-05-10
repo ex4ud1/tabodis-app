@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { formatPrice } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function PropertiesAdmin() {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   type Row = {
     id: string;
     title: string;

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { deleteProperty, updateProperty } from "@/app/admin/actions";
 import { PropertyForm } from "@/components/admin/PropertyForm";
 
@@ -15,7 +15,7 @@ export default async function EditProperty({
 }) {
   const { id } = await params;
   const { ok } = await searchParams;
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("properties")
     .select("*")

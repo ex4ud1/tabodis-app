@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { setLeadStatus } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ export default async function LeadsAdmin({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status: filter = "new" } = await searchParams;
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   type Row = {
     id: string;
     name: string;

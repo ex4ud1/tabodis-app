@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { moderateReview } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ export default async function ReviewsAdmin({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status: filter = "pending" } = await searchParams;
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   type Row = {
     id: string;
     author_name: string;

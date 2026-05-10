@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 async function counts() {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   const [pLive, pDraft, lNew, rPending] = await Promise.all([
     supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", "live"),
     supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", "draft"),
