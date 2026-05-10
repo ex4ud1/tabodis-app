@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatPrice } from "@/lib/utils";
+import { Toast } from "@/components/admin/Toast";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,12 @@ const STATUS_LABEL: Record<string, string> = {
   archived: "Archivada",
 };
 
-export default async function PropertiesAdmin() {
+export default async function PropertiesAdmin({
+  searchParams,
+}: {
+  searchParams: Promise<{ ok?: string }>;
+}) {
+  const { ok } = await searchParams;
   const supabase = createAdminClient();
   type Row = {
     id: string;
@@ -32,6 +38,7 @@ export default async function PropertiesAdmin() {
 
   return (
     <>
+      <Toast ok={ok} />
       <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
         <h1 className="font-serif text-5xl tracking-tight text-ink">Propiedades</h1>
         <Link href="/admin/properties/new" className="btn-primary">

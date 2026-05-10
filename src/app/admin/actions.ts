@@ -112,7 +112,7 @@ export async function createProperty(form: FormData) {
     throw new Error(error?.message ?? "No se pudo crear la propiedad");
   }
   bumpAll();
-  redirect(`/admin/properties/${row.id}?ok=1`);
+  redirect(`/admin/properties?ok=created`);
 }
 
 export async function updateProperty(id: string, form: FormData) {
@@ -141,7 +141,7 @@ export async function updateProperty(id: string, form: FormData) {
     throw new Error(error.message);
   }
   bumpAll();
-  redirect(`/admin/properties/${id}?ok=1`);
+  redirect(`/admin/properties?ok=updated`);
 }
 
 export async function deleteProperty(id: string) {

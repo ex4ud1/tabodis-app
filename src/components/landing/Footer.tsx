@@ -1,4 +1,9 @@
+"use client";
+
+import { useLang } from "@/lib/i18n";
+
 export function Footer() {
+  const { t } = useLang();
   const year = new Date().getFullYear();
   return (
     <footer className="bg-ink text-paper pt-24 pb-10 mt-20 rounded-t-[40px]">
@@ -9,13 +14,12 @@ export function Footer() {
               Tabo<em className="italic text-accent">·</em>dis<em className="italic text-accent">.</em>
             </div>
             <p className="mt-6 text-paper/70 text-sm max-w-[420px] leading-[1.5]">
-              Expertos en inmobiliaria, extranjería y gestión. Facilitamos tu vida en España desde
-              2019.
+              {t("footer.tagline")}
             </p>
           </div>
           <div>
             <h5 className="font-mono text-[10px] tracking-[0.18em] uppercase text-paper/50 mb-5">
-              Servicios
+              {t("footer.servicios")}
             </h5>
             <ul className="flex flex-col gap-3">
               <li>
@@ -42,35 +46,35 @@ export function Footer() {
           </div>
           <div>
             <h5 className="font-mono text-[10px] tracking-[0.18em] uppercase text-paper/50 mb-5">
-              Compañía
+              {t("footer.compania")}
             </h5>
             <ul className="flex flex-col gap-3">
               <li>
                 <a href="#nosotros" className="text-paper text-sm hover:text-accent transition-colors">
-                  Sobre nosotros
+                  {t("footer.about")}
                 </a>
               </li>
               <li>
                 <a href="#nosotros" className="text-paper text-sm hover:text-accent transition-colors">
-                  Equipo
+                  {t("footer.team")}
                 </a>
               </li>
               {/* TODO: cuando exista /casos */}
               <li>
                 <a href="#" className="text-paper text-sm hover:text-accent transition-colors">
-                  Casos
+                  {t("footer.cases")}
                 </a>
               </li>
               <li>
                 <a href="#" className="text-paper text-sm hover:text-accent transition-colors">
-                  Prensa
+                  {t("footer.press")}
                 </a>
               </li>
             </ul>
           </div>
           <div>
             <h5 className="font-mono text-[10px] tracking-[0.18em] uppercase text-paper/50 mb-5">
-              Contacto
+              {t("footer.contacto")}
             </h5>
             <ul className="flex flex-col gap-3">
               <li>

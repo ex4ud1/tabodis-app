@@ -1,14 +1,11 @@
-import { Arrow } from "@/components/icons";
+import { HeroCTA } from "./HeroCTA";
 
 export function Hero() {
   return (
     <section className="hero wrap pt-20 pb-10 md:pt-24" id="inicio">
-      <div className="hero-meta grid grid-cols-1 md:grid-cols-3 items-end gap-10 pb-8 border-b border-line">
+      <div className="hero-meta grid grid-cols-1 md:grid-cols-2 items-end gap-10 pb-8 border-b border-line">
         <div className="flex flex-col gap-2">
           <span className="eyebrow">Est. 2019 — Alicante, ES</span>
-        </div>
-        <div className="flex flex-col gap-2 md:text-center">
-          <span className="eyebrow">ES · UA · RU</span>
         </div>
         <div className="flex flex-col gap-2 md:text-right">
           <span className="eyebrow">Asesoría privada · solo cita previa</span>
@@ -32,14 +29,7 @@ export function Hero() {
           establecerte en España — desde encontrar y negociar tu casa ideal hasta resolver cada
           documento legal.
         </p>
-        <div className="hero-cta-row flex flex-wrap items-center gap-3 md:justify-end">
-          <a href="#propiedades" className="btn-primary">
-            Ver propiedades <Arrow size={14} />
-          </a>
-          <a href="#contacto" className="btn-ghost">
-            Hablar con Tatiana
-          </a>
-        </div>
+        <HeroCTA />
       </div>
     </section>
   );

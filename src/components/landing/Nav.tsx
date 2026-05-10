@@ -2,28 +2,30 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Arrow, ArrowDown, Close, Menu, Moon, Sun } from "@/components/icons";
+import { useLang, type Lang } from "@/lib/i18n";
 
-const NAV_LINKS = [
-  { href: "#inicio", label: "Inicio" },
-  { href: "#propiedades", label: "Propiedades" },
-  { href: "#servicios", label: "Servicios" },
-  { href: "#nosotros", label: "Nosotros" },
-  { href: "#contacto", label: "Contacto" },
+const NAV_LINKS: { href: string; key: string }[] = [
+  { href: "#inicio", key: "nav.inicio" },
+  { href: "#propiedades", key: "nav.propiedades" },
+  { href: "#servicios", key: "nav.servicios" },
+  { href: "#nosotros", key: "nav.nosotros" },
+  { href: "#testimonios", key: "nav.testimonios" },
+  { href: "#contacto", key: "nav.contacto" },
 ];
 
-const LANGS = [
-  { code: "ES", flag: "🇪🇸" },
-  { code: "UA", flag: "🇺🇦" },
-  { code: "RU", flag: "🇷🇺" },
+const LANGS: { code: Lang; label: string; flag: string }[] = [
+  { code: "es", label: "ES", flag: "🇪🇸" },
+  { code: "uk", label: "UA", flag: "🇺🇦" },
+  { code: "ru", label: "RU", flag: "🇷🇺" },
 ];
 
 export function Nav() {
+  const { lang, setLang, t } = useLang();
   const [floating, setFloating] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeId, setActiveId] = useState("inicio");
   const [dark, setDark] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const [lang, setLang] = useState("ES");
   const langRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,6 +66,7 @@ export function Nav() {
 
   const closeMenu = () => setMenuOpen(false);
   const current = LANGS.find((l) => l.code === lang) ?? LANGS[0];
+  const themeLabel = dark ? t("common.theme_light") : t("common.theme_dark");
 
   return (
     <nav
@@ -107,7 +110,7 @@ export function Nav() {
                     : "text-ink after:scale-x-0 hover:after:scale-x-100 after:bg-ink",
                 ].join(" ")}
               >
-                {l.label}
+                {t(l.key)}
               </a>
             ))}
           </div>
@@ -115,7 +118,8 @@ export function Nav() {
           <div className="flex gap-3 items-center">
             <button
               onClick={toggleTheme}
-              aria-label={dark ? "Modo claro" : "Modo oscuro"}
+              aria-label={themeLabel}
+              title={themeLabel}
               className="relative w-14 h-[30px] rounded-full bg-ink/10 border border-line hover:border-ink transition-all flex items-center"
             >
               <span
@@ -138,7 +142,7 @@ export function Nav() {
                     : "border-line text-ink-soft hover:text-ink hover:border-ink",
                 ].join(" ")}
               >
-                {current.flag} {lang} <ArrowDown size={10} />
+                {current.flag} {current.label} <ArrowDown size={10} />
               </button>
               {langOpen && (
                 <div className="absolute top-full inset-x-0 bg-paper border border-t-0 border-ink rounded-b-2xl p-1.5 shadow-[0_12px_30px_-10px_rgba(28,39,71,0.18)] z-[60] flex flex-col gap-0.5">
@@ -156,7 +160,7 @@ export function Nav() {
                           : "text-ink-soft hover:bg-ink/5 hover:text-ink",
                       ].join(" ")}
                     >
-                      {l.flag} {l.code}
+                      {l.flag} {l.label}
                     </button>
                   ))}
                 </div>
@@ -167,7 +171,7 @@ export function Nav() {
               href="#contacto"
               className="hidden md:inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-ink text-paper text-[13px] font-medium border border-ink transition-all hover:bg-accent hover:border-accent"
             >
-              Reservar llamada <Arrow size={12} />
+              {t("nav.cta")} <Arrow size={12} />
             </a>
 
             <button
@@ -198,19 +202,26 @@ export function Nav() {
                 onClick={closeMenu}
                 className="font-serif text-[36px] tracking-tight text-ink min-h-11 inline-flex items-center"
               >
-                {l.label}
+                {t(l.key)}
               </a>
             </li>
           ))}
           <li className="mt-7 pt-6 border-t border-line">
             <div className="flex gap-5">
               {LANGS.map((l) => (
-                <span
+                <button
                   key={l.code}
-                  className="font-mono text-[13px] tracking-[0.1em] text-ink-soft inline-flex items-center gap-1.5"
+                  onClick={() => {
+                    setLang(l.code);
+                    closeMenu();
+                  }}
+                  className={[
+                    "font-mono text-[13px] tracking-[0.1em] inline-flex items-center gap-1.5",
+                    l.code === lang ? "text-accent-deep" : "text-ink-soft hover:text-ink",
+                  ].join(" ")}
                 >
-                  {l.flag} {l.code}
-                </span>
+                  {l.flag} {l.label}
+                </button>
               ))}
             </div>
           </li>

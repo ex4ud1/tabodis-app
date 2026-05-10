@@ -95,7 +95,7 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
   };
 
   return (
-    <section className="section wrap py-24">
+    <section className="section wrap py-24" id="testimonios">
       <div className="bg-ink text-paper rounded-[32px] p-9 md:p-20 relative overflow-hidden">
         <span
           aria-hidden="true"

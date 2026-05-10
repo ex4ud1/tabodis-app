@@ -1,3 +1,4 @@
+import { LangProvider } from "@/lib/i18n";
 import { Nav } from "@/components/landing/Nav";
 import { Hero } from "@/components/landing/Hero";
 import { Services } from "@/components/landing/Services";
@@ -38,7 +39,7 @@ async function fetchAggregateRating() {
 export default async function HomePage() {
   const { rating, reviewCount } = await fetchAggregateRating();
   return (
-    <>
+    <LangProvider>
       <JsonLd rating={rating} reviewCount={reviewCount} />
       <Nav />
       <main id="main">
@@ -56,6 +57,6 @@ export default async function HomePage() {
       <ScrollProgressAndBackTop />
       <Reveal />
       <CookieBanner />
-    </>
+    </LangProvider>
   );
 }
