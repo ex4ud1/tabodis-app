@@ -9,12 +9,20 @@ async function fetchReviews(): Promise<Testimonial[]> {
   }
   try {
     const supabase = await createServerClient();
-    const { data, error } = await supabase
+    type Row = {
+      id: string;
+      author_name: string;
+      city: string | null;
+      rating: number;
+      services: string[] | null;
+      body: string;
+    };
+    const { data, error } = (await supabase
       .from("reviews")
       .select("id, author_name, city, rating, services, body")
       .eq("status", "approved")
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(10)) as { data: Row[] | null; error: unknown };
     if (error || !data) return [];
     return data.map((r) => ({
       id: r.id,

@@ -23,12 +23,25 @@ async function fetchProperties(): Promise<PropertyItem[]> {
   }
   try {
     const supabase = await createServerClient();
-    const { data, error } = await supabase
+    type Row = {
+      id: string;
+      slug: string;
+      title: string;
+      city: string;
+      loc: string;
+      price: number;
+      type: string;
+      bedrooms: number | null;
+      bathrooms: number | null;
+      m2: number | null;
+      featured: boolean | null;
+    };
+    const { data, error } = (await supabase
       .from("properties")
       .select("id, slug, title, city, loc, price, type, bedrooms, bathrooms, m2, featured")
       .eq("status", "live")
       .order("featured", { ascending: false })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })) as { data: Row[] | null; error: unknown };
     if (error || !data) return [];
     return data.map((p) => ({
       id: p.id,

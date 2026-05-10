@@ -23,10 +23,10 @@ async function fetchAggregateRating() {
   }
   try {
     const supabase = await createServerClient();
-    const { data } = await supabase
+    const { data } = (await supabase
       .from("reviews")
       .select("rating")
-      .eq("status", "approved");
+      .eq("status", "approved")) as { data: { rating: number }[] | null };
     if (!data || data.length === 0) return { rating: undefined, reviewCount: 0 };
     const total = data.reduce((acc, r) => acc + (r.rating ?? 0), 0);
     return { rating: total / data.length, reviewCount: data.length };
