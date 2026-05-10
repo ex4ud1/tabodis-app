@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerClient } from "@/lib/supabase/server";
 import { leadSchema } from "@/lib/validations";
 import { sendLeadEmail } from "@/lib/resend";
+import type { Database } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
 
@@ -29,7 +31,9 @@ export async function POST(request: Request) {
   // Use admin (service role) when available so workspace_id can be set even
   // without auth context. Fallback to anon (RLS allows anon insert if email/name valid).
   const useAdmin = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabase = useAdmin ? createAdminClient() : await createServerClient();
+  const supabase: SupabaseClient<Database> = useAdmin
+    ? createAdminClient()
+    : ((await createServerClient()) as unknown as SupabaseClient<Database>);
 
   const { data: inserted, error } = await supabase
     .from("leads")

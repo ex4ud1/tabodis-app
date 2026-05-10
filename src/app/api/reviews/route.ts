@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerClient } from "@/lib/supabase/server";
 import { reviewSchema } from "@/lib/validations";
+import type { Database } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
 
@@ -25,7 +27,9 @@ export async function POST(request: Request) {
 
   const r = parsed.data;
   const useAdmin = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabase = useAdmin ? createAdminClient() : await createServerClient();
+  const supabase: SupabaseClient<Database> = useAdmin
+    ? createAdminClient()
+    : ((await createServerClient()) as unknown as SupabaseClient<Database>);
 
   const { data, error } = await supabase
     .from("reviews")
