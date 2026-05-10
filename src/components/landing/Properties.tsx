@@ -35,10 +35,11 @@ async function fetchProperties(): Promise<PropertyItem[]> {
       bathrooms: number | null;
       m2: number | null;
       featured: boolean | null;
+      images: unknown;
     };
     const { data, error } = (await supabase
       .from("properties")
-      .select("id, slug, title, city, loc, price, type, bedrooms, bathrooms, m2, featured")
+      .select("id, slug, title, city, loc, price, type, bedrooms, bathrooms, m2, featured, images")
       .eq("status", "live")
       .order("featured", { ascending: false })
       .order("created_at", { ascending: false })) as { data: Row[] | null; error: unknown };
@@ -55,6 +56,7 @@ async function fetchProperties(): Promise<PropertyItem[]> {
       bathrooms: p.bathrooms ?? 0,
       m2: p.m2 ?? 0,
       featured: !!p.featured,
+      cover: Array.isArray(p.images) && typeof p.images[0] === "string" ? (p.images[0] as string) : null,
     }));
   } catch {
     return [];

@@ -16,6 +16,7 @@ export type PropertyItem = {
   bathrooms: number;
   m2: number;
   featured: boolean;
+  cover: string | null;
 };
 
 const TABS = ["Todo", "Venta", "Alquiler", "Lujo"] as const;
@@ -198,15 +199,20 @@ function PropCard({ p, isFeatured }: { p: PropertyItem; isFeatured: boolean }) {
           isFeatured ? "aspect-[3/4]" : "aspect-[4/3]",
         ].join(" ")}
       >
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--bg-2), color-mix(in oklab, var(--accent) 18%, var(--bg-2)))",
-            backgroundImage:
-              "repeating-linear-gradient(135deg, rgba(28,39,71,0.05) 0 2px, transparent 2px 18px)",
-          }}
-        />
+        {p.cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.cover} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--bg-2), color-mix(in oklab, var(--accent) 18%, var(--bg-2)))",
+              backgroundImage:
+                "repeating-linear-gradient(135deg, rgba(28,39,71,0.05) 0 2px, transparent 2px 18px)",
+            }}
+          />
+        )}
         <span
           className={[
             "absolute top-4 left-4 px-3 py-1.5 rounded-full font-mono text-[10px] tracking-[0.14em] uppercase border",

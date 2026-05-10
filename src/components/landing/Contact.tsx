@@ -56,9 +56,13 @@ export function Contact() {
       [k]: d[k].includes(v) ? d[k].filter((x) => x !== v) : [...d[k], v],
     }));
 
+  const needsBudget = data.services.includes("Inmobiliaria");
   const steps = [
     { label: "Servicio", valid: data.services.length > 0 },
-    { label: "Plan", valid: typeof data.budget === "number" && !!data.urgency },
+    {
+      label: needsBudget ? "Plan" : "Momento",
+      valid: !!data.urgency && (!needsBudget || typeof data.budget === "number"),
+    },
     {
       label: "Contacto",
       valid: !!data.name && isValidEmail(data.email) && data.contact_methods.length > 0,
@@ -78,7 +82,7 @@ export function Contact() {
         email: data.email,
         phone: data.phone || undefined,
         services: data.services as unknown as LeadInput["services"],
-        budget: data.budget,
+        budget: needsBudget ? data.budget : undefined,
         urgency: data.urgency as LeadInput["urgency"],
         contact_methods: data.contact_methods as unknown as LeadInput["contact_methods"],
         message: data.message || undefined,
@@ -143,6 +147,7 @@ export function Contact() {
                   <Step1
                     budget={data.budget}
                     urgency={data.urgency}
+                    showBudget={needsBudget}
                     onBudget={(v) => update("budget", v)}
                     onUrgency={(v) => update("urgency", v)}
                   />
@@ -258,11 +263,13 @@ function Step0({ selected, onToggle }: { selected: string[]; onToggle: (v: strin
 function Step1({
   budget,
   urgency,
+  showBudget,
   onBudget,
   onUrgency,
 }: {
   budget: number;
   urgency: string;
+  showBudget: boolean;
   onBudget: (v: number) => void;
   onUrgency: (v: string) => void;
 }) {
@@ -276,36 +283,46 @@ function Step1({
   return (
     <>
       <h4 className="font-serif text-[clamp(28px,3vw,42px)] leading-[1.05] tracking-tight text-ink max-w-[18ch]">
-        Tu <em className="italic text-accent-deep">presupuesto</em> y momento.
+        {showBudget ? (
+          <>
+            Tu <em className="italic text-accent-deep">presupuesto</em> y momento.
+          </>
+        ) : (
+          <>
+            ¿Cuándo te <em className="italic text-accent-deep">gustaría</em> empezar?
+          </>
+        )}
       </h4>
 
-      <div className="flex flex-col gap-2 mt-2">
-        <label className="font-mono text-[10px] tracking-[0.16em] uppercase text-ink-soft">
-          Presupuesto aproximado
-        </label>
-        <div className="flex flex-col gap-3.5 py-2">
-          <div className="flex items-baseline gap-2 font-serif">
-            <span className="text-[clamp(40px,5vw,56px)] leading-none tracking-tight">
-              <em className="italic text-accent-deep">{head}</em> {rest.join(" ")}
-            </span>
-          </div>
-          <input
-            type="range"
-            min={50}
-            max={MAX}
-            step={25}
-            value={budget}
-            onChange={(e) => onBudget(Number(e.target.value))}
-            className="range-track"
-            style={{ ["--p" as string]: `${pct}%` }}
-            aria-label="Presupuesto"
-          />
-          <div className="flex justify-between font-mono text-[10px] tracking-[0.14em] uppercase text-ink-soft">
-            <span>€50k</span>
-            <span>€3M+</span>
+      {showBudget && (
+        <div className="flex flex-col gap-2 mt-2">
+          <label className="font-mono text-[10px] tracking-[0.16em] uppercase text-ink-soft">
+            Presupuesto aproximado
+          </label>
+          <div className="flex flex-col gap-3.5 py-2">
+            <div className="flex items-baseline gap-2 font-serif">
+              <span className="text-[clamp(40px,5vw,56px)] leading-none tracking-tight">
+                <em className="italic text-accent-deep">{head}</em> {rest.join(" ")}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={50}
+              max={MAX}
+              step={25}
+              value={budget}
+              onChange={(e) => onBudget(Number(e.target.value))}
+              className="range-track"
+              style={{ ["--p" as string]: `${pct}%` }}
+              aria-label="Presupuesto"
+            />
+            <div className="flex justify-between font-mono text-[10px] tracking-[0.14em] uppercase text-ink-soft">
+              <span>€50k</span>
+              <span>€3M+</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="flex flex-col gap-2 mt-3">
         <label className="font-mono text-[10px] tracking-[0.16em] uppercase text-ink-soft">
@@ -463,6 +480,7 @@ function Step3({
 }) {
   const fmt = (k: number) =>
     k >= 1000 ? `€${(k / 1000).toFixed(k % 1000 === 0 ? 0 : 1)}M` : `€${k}k`;
+  const showBudget = data.services.includes("Inmobiliaria");
   return (
     <>
       <h4 className="font-serif text-[clamp(28px,3vw,42px)] leading-[1.05] tracking-tight text-ink max-w-[18ch]">
@@ -475,7 +493,8 @@ function Step3({
         <strong className="block mb-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-ink">
           Resumen
         </strong>
-        {data.services.join(", ")} · Hasta {fmt(data.budget)} · {data.urgency}
+        {data.services.join(", ")}
+        {showBudget && ` · Hasta ${fmt(data.budget)}`} · {data.urgency}
       </div>
       <textarea
         rows={4}

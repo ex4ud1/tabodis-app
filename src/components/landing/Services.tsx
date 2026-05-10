@@ -39,26 +39,13 @@ export function Services() {
         {SERVICES.map((s) => (
           <article
             key={s.num}
-            className="bg-paper rounded-3xl p-7 border border-line-soft flex flex-col relative overflow-hidden transition-all duration-[0.4s] hover:-translate-y-1 hover:shadow-[0_20px_60px_-20px_rgba(28,39,71,0.18)] group"
+            className="bg-paper rounded-3xl p-8 border border-line-soft flex flex-col relative overflow-hidden transition-all duration-[0.4s] hover:-translate-y-1 hover:shadow-[0_20px_60px_-20px_rgba(28,39,71,0.18)] group min-h-[320px]"
           >
-            <span className="font-mono text-[11px] tracking-widest text-ink-mute">
+            <span className="font-mono text-[11px] tracking-widest text-ink-mute mb-12">
               {s.num} / 03
             </span>
-            <div className="my-6 rounded-t-[200px] rounded-b-3xl aspect-[4/5] relative overflow-hidden bg-bg-2">
-              <div
-                className="absolute inset-0 flex items-center justify-center"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(45deg, rgba(28,39,71,0.06) 0 2px, transparent 2px 14px)",
-                }}
-              >
-                <span className="font-mono text-[10px] tracking-[0.16em] text-ink-soft bg-paper px-2.5 py-1.5 rounded">
-                  {s.img}
-                </span>
-              </div>
-            </div>
-            <h3 className="font-serif text-4xl leading-none tracking-tight mb-3.5">{s.title}</h3>
-            <p className="text-sm leading-[1.55] text-ink-soft mb-6 flex-1">{s.desc}</p>
+            <h3 className="font-serif text-4xl leading-none tracking-tight mb-4">{s.title}</h3>
+            <p className="text-sm leading-[1.55] text-ink-soft mb-8 flex-1">{s.desc}</p>
             <a
               href="#contacto"
               aria-label={`Consultar sobre ${s.title}`}

@@ -32,6 +32,7 @@ export default async function EditProperty({
     return deleteProperty(id);
   };
 
+  const imgs = Array.isArray(data.images) ? (data.images as string[]) : [];
   const initial = {
     title: data.title as string,
     description: data.description as string | null,
@@ -44,6 +45,7 @@ export default async function EditProperty({
     m2: data.m2 as number | null,
     status: data.status as string,
     featured: data.featured as boolean | null,
+    images: imgs,
   };
 
   return (

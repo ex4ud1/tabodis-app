@@ -37,9 +37,18 @@ type PropPayload = {
   m2: number;
   status: "draft" | "live" | "review" | "archived";
   featured: boolean;
+  images: string[];
 };
 
 function readPropForm(form: FormData): PropPayload {
+  let images: string[] = [];
+  try {
+    const raw = String(form.get("images") ?? "[]");
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) images = parsed.filter((x) => typeof x === "string");
+  } catch {
+    /* ignore */
+  }
   return {
     title: String(form.get("title") ?? "").trim(),
     description: String(form.get("description") ?? "").trim() || undefined,
@@ -50,8 +59,9 @@ function readPropForm(form: FormData): PropPayload {
     bedrooms: Number(form.get("bedrooms") ?? 0),
     bathrooms: Number(form.get("bathrooms") ?? 0),
     m2: Number(form.get("m2") ?? 0),
-    status: (String(form.get("status") ?? "draft") as PropPayload["status"]),
+    status: (String(form.get("status") ?? "live") as PropPayload["status"]),
     featured: form.get("featured") === "on",
+    images,
   };
 }
 
@@ -78,6 +88,7 @@ export async function createProperty(form: FormData) {
       m2: data.m2,
       status: data.status,
       featured: data.featured,
+      images: data.images,
       published_at: data.status === "live" ? new Date().toISOString() : null,
     })
     .select("id")
@@ -104,6 +115,7 @@ export async function updateProperty(id: string, form: FormData) {
       m2: data.m2,
       status: data.status,
       featured: data.featured,
+      images: data.images,
       published_at: data.status === "live" ? new Date().toISOString() : null,
     })
     .eq("id", id);

@@ -1,3 +1,5 @@
+import { PhotoUploader } from "./PhotoUploader";
+
 type Initial = {
   title?: string;
   description?: string | null;
@@ -10,6 +12,7 @@ type Initial = {
   m2?: number | null;
   status?: string;
   featured?: boolean | null;
+  images?: string[];
 };
 
 export function PropertyForm({
@@ -87,16 +90,23 @@ export function PropertyForm({
           <span className="font-mono text-[10px] tracking-widest uppercase text-ink-soft">Estado</span>
           <select
             name="status"
-            defaultValue={i.status ?? "draft"}
+            defaultValue={i.status ?? "live"}
             className="border-0 border-b border-line bg-transparent py-2 text-base outline-none focus:border-accent"
             style={{ fontSize: 16 }}
           >
+            <option value="live">Publicada</option>
             <option value="draft">Borrador</option>
             <option value="review">En revisión</option>
-            <option value="live">Publicada</option>
             <option value="archived">Archivada</option>
           </select>
         </label>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="font-mono text-[10px] tracking-widest uppercase text-ink-soft">
+          Fotos (la primera es la portada)
+        </span>
+        <PhotoUploader name="images" initial={i.images ?? []} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
