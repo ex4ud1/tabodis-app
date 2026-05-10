@@ -3,7 +3,10 @@ import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
-const OWNER_EMAIL = (process.env.OWNER_EMAIL ?? "tatanuk@gmail.com").toLowerCase();
+const OWNERS = (process.env.OWNERS ?? "tatanuk@gmail.com,zadorbus@gmail.com")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -21,8 +24,12 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${url.origin}/login?error=${encodeURIComponent(error?.message ?? "auth")}`);
   }
 
-  // Auto-provision owner on first sign-in (only if email matches OWNER_EMAIL).
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY && data.user.email?.toLowerCase() === OWNER_EMAIL) {
+  // Auto-provision owner on first sign-in (only if email is in OWNERS list).
+  if (
+    process.env.SUPABASE_SERVICE_ROLE_KEY &&
+    data.user.email &&
+    OWNERS.includes(data.user.email.toLowerCase())
+  ) {
     const admin = createAdminClient();
     await admin
       .from("workspace_members")
