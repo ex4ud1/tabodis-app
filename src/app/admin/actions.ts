@@ -18,13 +18,16 @@ async function requireMember() {
     data: { user },
   } = await supa.auth.getUser();
   if (!user) throw new Error("Unauthorized: not signed in");
-  const { data: member } = await supa
+  // Check membership via admin (service role) so we never get tripped up by
+  // policy/role nuances when a Server Action runs.
+  const admin = createAdminClient();
+  const { data: member } = await admin
     .from("workspace_members")
     .select("workspace_id, role")
     .eq("user_id", user.id)
     .maybeSingle();
   if (!member) throw new Error("Unauthorized: not a workspace member");
-  return { user, member, admin: createAdminClient() };
+  return { user, member, admin };
 }
 
 function bumpAll() {
