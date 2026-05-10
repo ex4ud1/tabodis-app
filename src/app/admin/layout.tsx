@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { signOut } from "@/app/login/actions";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,12 @@ const NAV = [
   { href: "/admin/reviews", label: "Reseñas" },
 ];
 
+const WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
+const OWNERS = (process.env.OWNERS ?? "tatanuk@gmail.com,zadorbus@gmail.com")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createServerClient();
   const {
@@ -20,11 +27,29 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect("/login");
 
   // Verify workspace membership; non-members get a friendly screen.
-  const { data: membership } = await supabase
+  let { data: membership } = await supabase
     .from("workspace_members")
     .select("role")
     .eq("user_id", user.id)
     .maybeSingle();
+
+  // Auto-provision: if the email is whitelisted in OWNERS and we have a
+  // service role key, add them as owner on the fly. Subsequent visits skip.
+  if (
+    !membership &&
+    user.email &&
+    OWNERS.includes(user.email.toLowerCase()) &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    const admin = createAdminClient();
+    await admin
+      .from("workspace_members")
+      .upsert(
+        { workspace_id: WORKSPACE_ID, user_id: user.id, role: "owner" },
+        { onConflict: "workspace_id,user_id", ignoreDuplicates: true },
+      );
+    membership = { role: "owner" };
+  }
 
   if (!membership) {
     return (
