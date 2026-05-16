@@ -10,7 +10,7 @@ export async function signInWithOtp(email: string): Promise<{ error?: string }> 
   }
   const supabase = await createServerClient();
   const h = await headers();
-  const origin = h.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://tabodis-app.vercel.app";
+  const origin = h.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.tabodis.com";
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: { emailRedirectTo: `${origin}/auth/callback` },

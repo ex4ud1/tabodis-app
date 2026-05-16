@@ -75,30 +75,36 @@ export function PropertyForm({
         <Field name="price" label="Precio (€) *" type="number" defaultValue={i.price} required />
         <label className="flex flex-col gap-1.5">
           <span className="font-mono text-[10px] tracking-widest uppercase text-ink-soft">Tipo *</span>
-          <select
-            name="type"
-            defaultValue={i.type ?? "venta"}
-            className="border-0 border-b border-line bg-transparent py-2 text-base outline-none focus:border-accent"
-            style={{ fontSize: 16 }}
-          >
-            <option value="venta">Venta</option>
-            <option value="alquiler">Alquiler</option>
-            <option value="lujo">Lujo</option>
-          </select>
+          <div className="relative">
+            <select
+              name="type"
+              defaultValue={i.type ?? "venta"}
+              className="w-full appearance-none rounded-xl border border-line bg-transparent px-3 py-2.5 text-base outline-none focus:border-accent transition-colors pr-9"
+              style={{ fontSize: 16 }}
+            >
+              <option value="venta">Venta</option>
+              <option value="alquiler">Alquiler</option>
+              <option value="lujo">Lujo</option>
+            </select>
+            <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="font-mono text-[10px] tracking-widest uppercase text-ink-soft">Estado</span>
-          <select
-            name="status"
-            defaultValue={i.status ?? "live"}
-            className="border-0 border-b border-line bg-transparent py-2 text-base outline-none focus:border-accent"
-            style={{ fontSize: 16 }}
-          >
-            <option value="live">Publicada</option>
-            <option value="draft">Borrador</option>
-            <option value="review">En revisión</option>
-            <option value="archived">Archivada</option>
-          </select>
+          <div className="relative">
+            <select
+              name="status"
+              defaultValue={i.status ?? "live"}
+              className="w-full appearance-none rounded-xl border border-line bg-transparent px-3 py-2.5 text-base outline-none focus:border-accent transition-colors pr-9"
+              style={{ fontSize: 16 }}
+            >
+              <option value="live">Publicada</option>
+              <option value="draft">Borrador</option>
+              <option value="review">En revisión</option>
+              <option value="archived">Archivada</option>
+            </select>
+            <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
         </label>
       </div>
 

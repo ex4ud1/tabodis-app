@@ -80,25 +80,13 @@ export function Footer() {
             <ul className="flex flex-col gap-3">
               <li>
                 <a
-                  href="mailto:hola@tabodis.com"
+                  href="mailto:servicios@tabodis.com"
                   className="text-paper text-sm hover:text-accent transition-colors"
                 >
-                  hola@tabodis.com
+                  servicios@tabodis.com
                 </a>
               </li>
-              <li>
-                <a
-                  href="tel:+34965000000"
-                  className="text-paper text-sm hover:text-accent transition-colors"
-                >
-                  +34 965 000 000
-                </a>
-              </li>
-              <li className="text-paper text-sm">
-                Av. de la Estación, 12
-                <br />
-                Alicante, ES
-              </li>
+              <li className="text-paper text-sm">Alicante</li>
             </ul>
           </div>
         </div>
