@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { Arrow, HouseSearch, Pin } from "@/components/icons";
 import { formatPrice } from "@/lib/utils";
@@ -174,8 +175,13 @@ function PropCard({ p, isFeatured }: { p: PropertyItem; isFeatured: boolean }) {
         ].join(" ")}
       >
         {p.cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.cover} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
+          <Image
+            src={p.cover}
+            alt={p.title}
+            fill
+            sizes="(max-width:768px) 100vw, (max-width:1280px) 50vw, 33vw"
+            className="object-cover"
+          />
         ) : (
           <div
             className="absolute inset-0"

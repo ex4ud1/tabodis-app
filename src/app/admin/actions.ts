@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/utils";
+import { propertySchema, type PropertyInput } from "@/lib/validations";
 
 const WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -39,52 +40,38 @@ function bumpAll() {
 
 // ─── Properties ────────────────────────────────────────────────────────────────
 
-type PropPayload = {
-  title: string;
-  description?: string;
-  price: number;
-  type: "venta" | "alquiler" | "lujo";
-  city: string;
-  loc: string;
-  bedrooms: number;
-  bathrooms: number;
-  m2: number;
-  status: "draft" | "live" | "review" | "archived";
-  featured: boolean;
-  images: string[];
-};
-
-function readPropForm(form: FormData): PropPayload {
-  let images: string[] = [];
+function readPropForm(form: FormData): PropertyInput {
+  let images: unknown = [];
   try {
     const raw = String(form.get("images") ?? "[]");
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) images = parsed.filter((x) => typeof x === "string");
+    images = JSON.parse(raw);
   } catch {
-    /* ignore */
+    images = [];
   }
-  return {
+  const parsed = propertySchema.safeParse({
     title: String(form.get("title") ?? "").trim(),
-    description: String(form.get("description") ?? "").trim() || undefined,
-    price: Number(form.get("price") ?? 0),
-    type: (String(form.get("type") ?? "venta") as PropPayload["type"]),
+    description: String(form.get("description") ?? "").trim(),
+    price: form.get("price") ?? 0,
+    type: String(form.get("type") ?? "venta"),
     city: String(form.get("city") ?? "").trim(),
     loc: String(form.get("loc") ?? "").trim(),
-    bedrooms: Number(form.get("bedrooms") ?? 0),
-    bathrooms: Number(form.get("bathrooms") ?? 0),
-    m2: Number(form.get("m2") ?? 0),
-    status: (String(form.get("status") ?? "live") as PropPayload["status"]),
+    bedrooms: form.get("bedrooms") ?? 0,
+    bathrooms: form.get("bathrooms") ?? 0,
+    m2: form.get("m2") ?? 0,
+    status: String(form.get("status") ?? "live"),
     featured: form.get("featured") === "on",
     images,
-  };
+  });
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    throw new Error(`Datos inválidos: ${first?.path.join(".") || "campo"} — ${first?.message}`);
+  }
+  return parsed.data;
 }
 
 export async function createProperty(form: FormData) {
   const { admin } = await requireMember();
   const data = readPropForm(form);
-  if (!data.title || !data.price || !data.city) {
-    throw new Error("Faltan título, precio o ciudad");
-  }
   const slug = slugify(data.title) + "-" + Date.now().toString(36).slice(-4);
   const { data: row, error } = await admin
     .from("properties")
@@ -92,7 +79,7 @@ export async function createProperty(form: FormData) {
       workspace_id: WORKSPACE_ID,
       slug,
       title: data.title,
-      description: data.description ?? null,
+      description: data.description || null,
       price: data.price,
       type: data.type,
       city: data.city,
@@ -122,7 +109,7 @@ export async function updateProperty(id: string, form: FormData) {
     .from("properties")
     .update({
       title: data.title,
-      description: data.description ?? null,
+      description: data.description || null,
       price: data.price,
       type: data.type,
       city: data.city,

@@ -31,7 +31,7 @@ export function AdminNav() {
       }
     };
     fetchCounts();
-    const id = setInterval(fetchCounts, 30_000);
+    const id = setInterval(fetchCounts, 60_000);
     return () => clearInterval(id);
   }, []);
 

@@ -204,11 +204,12 @@ export function Nav() {
       {/* Mobile drawer */}
       <div
         className={[
-          "md:hidden fixed inset-0 top-[70px] z-[49] bg-bg p-8 transition-[opacity,transform] duration-300",
+          "md:hidden fixed inset-x-0 bottom-0 z-[49] bg-bg p-8 transition-[opacity,transform] duration-300",
           menuOpen
             ? "opacity-100 pointer-events-auto translate-y-0"
             : "opacity-0 pointer-events-none -translate-y-2.5",
         ].join(" ")}
+        style={{ top: "calc(70px + env(safe-area-inset-top, 0px))" }}
       >
         <ul className="flex flex-col gap-6">
           {NAV_LINKS.map((l) => (

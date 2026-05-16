@@ -26,7 +26,18 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+// NEXT_PUBLIC_SITE_URL must be set in production — if it's missing here OG
+// images and the canonical URL would silently fall back to the vercel.app
+// preview domain. The fallback is kept only as a last resort for dev / CI.
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tabodis-app.vercel.app";
+if (
+  process.env.NODE_ENV === "production" &&
+  !process.env.NEXT_PUBLIC_SITE_URL
+) {
+  console.warn(
+    "[layout] NEXT_PUBLIC_SITE_URL is not set in production — metadata is using the vercel.app fallback.",
+  );
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

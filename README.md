@@ -10,7 +10,7 @@ Real-estate brokerage SaaS for Costa Blanca. Landing + admin in one Next.js app,
 
 ## Local development
 
-Prerequisites: Node.js 20+ and npm (or pnpm).
+Prerequisites: Node.js 20+ and npm.
 
 ```bash
 # 1. Install dependencies

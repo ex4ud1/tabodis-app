@@ -21,10 +21,10 @@ export function PropertyForm({
   submitLabel,
   onDelete,
 }: {
-  action: (form: FormData) => Promise<{ error?: string } | void>;
+  action: (form: FormData) => Promise<void>;
   initial?: Initial;
   submitLabel: string;
-  onDelete?: () => Promise<{ error?: string } | void>;
+  onDelete?: () => Promise<void>;
 }) {
   const i = initial ?? {};
   const Field = ({

@@ -3,7 +3,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
-const OWNERS = (process.env.OWNERS ?? "tatanuk@gmail.com,zadorbus@gmail.com")
+const OWNERS = (process.env.OWNERS ?? "")
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
@@ -11,7 +11,10 @@ const OWNERS = (process.env.OWNERS ?? "tatanuk@gmail.com,zadorbus@gmail.com")
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") ?? "/admin";
+  // Only allow same-origin redirects: must start with "/" but not "//"
+  // (protocol-relative URLs are interpreted as external by browsers).
+  const rawNext = url.searchParams.get("next") ?? "/admin";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/admin";
 
   if (!code) {
     return NextResponse.redirect(`${url.origin}/login`);

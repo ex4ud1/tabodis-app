@@ -60,17 +60,7 @@ export function Footer() {
                   {t("footer.team")}
                 </a>
               </li>
-              {/* TODO: cuando exista /casos */}
-              <li>
-                <a href="#" className="text-paper text-sm hover:text-accent transition-colors">
-                  {t("footer.cases")}
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-paper text-sm hover:text-accent transition-colors">
-                  {t("footer.press")}
-                </a>
-              </li>
+              {/* Casos / Prensa: enabled once the sections ship. */}
             </ul>
           </div>
           <div>

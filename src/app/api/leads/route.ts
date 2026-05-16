@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerClient } from "@/lib/supabase/server";
 import { leadSchema } from "@/lib/validations";
 import { sendLeadEmail } from "@/lib/resend";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
+import { logSupabaseError } from "@/lib/logger";
 import type { Database } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
@@ -11,6 +12,15 @@ export const runtime = "nodejs";
 const WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
 
 export async function POST(request: Request) {
+  const ip = clientIp(request);
+  const limited = checkRateLimit(`leads:${ip}`, { limit: 5, windowMs: 60_000 });
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfter) } },
+    );
+  }
+
   let payload: unknown;
   try {
     payload = await request.json();
@@ -28,24 +38,23 @@ export async function POST(request: Request) {
 
   const lead = parsed.data;
 
-  // Use admin (service role) when available so workspace_id can be set even
-  // without auth context. Fallback to anon (RLS allows anon insert if email/name valid).
-  const useAdmin = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabase: SupabaseClient<Database> = useAdmin
-    ? createAdminClient()
-    : ((await createServerClient()) as unknown as SupabaseClient<Database>);
-
+  // Use the anon SSR client; RLS allows anonymous inserts that pass the
+  // column constraints in migration 0004. workspace_id is always set to the
+  // single-tenant workspace so the admin dashboard can see new leads.
+  // The unknown-cast works around Supabase generated types collapsing to
+  // `never[]` when the SSR wrapper is consumed outside of an admin context.
+  const supabase = (await createServerClient()) as unknown as SupabaseClient<Database>;
   const { data: inserted, error } = await supabase
     .from("leads")
     .insert({
-      workspace_id: useAdmin ? WORKSPACE_ID : null,
+      workspace_id: WORKSPACE_ID,
       name: lead.name,
       email: lead.email,
       phone: lead.phone || null,
-      services: lead.services as unknown as string[],
+      services: lead.services,
       budget: lead.budget ?? null,
       urgency: lead.urgency,
-      contact_methods: lead.contact_methods as unknown as string[],
+      contact_methods: lead.contact_methods,
       message: lead.message || null,
       language: lead.language,
       source: "web",
@@ -55,7 +64,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    console.error("[api/leads] insert failed", error);
+    logSupabaseError("api/leads", error);
     return NextResponse.json({ error: "Could not save lead" }, { status: 500 });
   }
 
@@ -63,7 +72,7 @@ export async function POST(request: Request) {
   try {
     await sendLeadEmail(lead);
   } catch (err) {
-    console.error("[api/leads] email send threw", err);
+    logSupabaseError("api/leads:email", err);
   }
 
   return NextResponse.json({ ok: true, id: inserted?.id }, { status: 201 });

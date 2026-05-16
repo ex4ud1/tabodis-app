@@ -15,9 +15,11 @@ import { Reveal } from "@/components/shared/Reveal";
 import { CookieBanner } from "@/components/shared/CookieBanner";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { createServerClient } from "@/lib/supabase/server";
-import { ReviewsRefresher } from "@/components/landing/ReviewsRefresher";
 
-export const dynamic = "force-dynamic";
+// Let Next.js cache the landing for 5 minutes (matches `revalidate = 300` on
+// the Properties and Testimonials data fetches). Removing `force-dynamic`
+// drops the per-request server cost and lets the CDN serve cold visits fast.
+export const revalidate = 300;
 
 async function fetchAggregateRating() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -58,7 +60,6 @@ export default async function HomePage() {
       <ScrollProgressAndBackTop />
       <Reveal />
       <CookieBanner />
-      <ReviewsRefresher />
     </LangProvider>
   );
 }

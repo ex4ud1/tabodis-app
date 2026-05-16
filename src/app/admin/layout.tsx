@@ -8,7 +8,7 @@ import { AdminNav } from "@/components/admin/AdminNav";
 export const dynamic = "force-dynamic";
 
 const WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
-const OWNERS = (process.env.OWNERS ?? "tatanuk@gmail.com,zadorbus@gmail.com")
+const OWNERS = (process.env.OWNERS ?? "")
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
@@ -21,11 +21,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect("/login");
 
   // Verify workspace membership; non-members get a friendly screen.
-  let { data: membership } = await supabase
+  // Cast through unknown because Supabase generated types can collapse the
+  // select() result to `never` in some build configurations.
+  const initialMembership = (await supabase
     .from("workspace_members")
     .select("role")
     .eq("user_id", user.id)
-    .maybeSingle();
+    .maybeSingle()) as unknown as { data: { role: string } | null };
+  let membership: { role: string } | null = initialMembership.data;
 
   // Auto-provision: if the email is whitelisted in OWNERS and we have a
   // service role key, add them as owner on the fly. Subsequent visits skip.
