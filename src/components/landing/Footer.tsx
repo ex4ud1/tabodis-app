@@ -23,26 +23,21 @@ export function Footer() {
               {t("footer.servicios")}
             </h5>
             <ul className="flex flex-col gap-3">
-              <li>
-                <a href="#servicios" className="text-paper text-sm hover:text-accent transition-colors">
-                  Inmobiliaria
-                </a>
-              </li>
-              <li>
-                <a href="#servicios" className="text-paper text-sm hover:text-accent transition-colors">
-                  Extranjería
-                </a>
-              </li>
-              <li>
-                <a href="#servicios" className="text-paper text-sm hover:text-accent transition-colors">
-                  Gestión
-                </a>
-              </li>
-              <li>
-                <a href="#servicios" className="text-paper text-sm hover:text-accent transition-colors">
-                  Asesoría legal
-                </a>
-              </li>
+              {[
+                "contact.svc_inmo",
+                "contact.svc_extr",
+                "contact.svc_gest",
+                "contact.svc_legal",
+              ].map((k) => (
+                <li key={k}>
+                  <a
+                    href="#servicios"
+                    className="text-paper text-sm hover:text-accent transition-colors"
+                  >
+                    {t(k)}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
           <div>
@@ -85,7 +80,7 @@ export function Footer() {
             © {year} Tabodispain S.L.
           </p>
           <p className="font-mono text-[11px] tracking-widest uppercase text-paper/50">
-            Privacidad · Cookies · Aviso legal
+            {t("footer.legal")}
           </p>
           <Link
             href="/login"

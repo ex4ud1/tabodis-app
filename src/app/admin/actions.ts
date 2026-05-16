@@ -4,8 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { slugify } from "@/lib/utils";
+import { imageUrlsToStoragePaths, slugify } from "@/lib/utils";
+import { logSupabaseError } from "@/lib/logger";
 import { propertySchema, type PropertyInput } from "@/lib/validations";
+
+const PROPERTY_IMAGES_BUCKET = "property-images";
 
 const WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -133,13 +136,38 @@ export async function updateProperty(id: string, form: FormData) {
 
 export async function deleteProperty(id: string) {
   const { admin } = await requireMember();
+
+  // Fetch the image list first so we know what to clean up from storage after
+  // the row is gone. Done with a separate select rather than .delete().select()
+  // because storage operations are fire-and-forget and must not block the
+  // delete from succeeding.
+  const { data: existing } = await admin
+    .from("properties")
+    .select("images")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await admin.from("properties").delete().eq("id", id);
   if (error) {
-    console.error("[deleteProperty] failed", error);
+    logSupabaseError("deleteProperty", error);
     throw new Error(error.message);
   }
+
+  if (existing) {
+    const paths = imageUrlsToStoragePaths(
+      (existing as { images: unknown }).images,
+      PROPERTY_IMAGES_BUCKET,
+    );
+    if (paths.length > 0) {
+      const { error: rmErr } = await admin.storage
+        .from(PROPERTY_IMAGES_BUCKET)
+        .remove(paths);
+      if (rmErr) logSupabaseError("deleteProperty:storage", rmErr);
+    }
+  }
+
   bumpAll();
-  redirect("/admin/properties");
+  redirect("/admin/properties?ok=deleted");
 }
 
 // ─── Reviews ───────────────────────────────────────────────────────────────────

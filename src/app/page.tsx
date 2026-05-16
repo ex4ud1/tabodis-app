@@ -15,11 +15,13 @@ import { Reveal } from "@/components/shared/Reveal";
 import { CookieBanner } from "@/components/shared/CookieBanner";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { createServerClient } from "@/lib/supabase/server";
+import { getServerLang, getServerT } from "@/lib/lang-server";
 
-// Let Next.js cache the landing for 5 minutes (matches `revalidate = 300` on
-// the Properties and Testimonials data fetches). Removing `force-dynamic`
-// drops the per-request server cost and lets the CDN serve cold visits fast.
-export const revalidate = 300;
+// Cookie-driven i18n means each locale needs its own SSR payload. force-dynamic
+// is the right trade-off here: the landing already issues two Supabase reads,
+// which dominate the per-request budget anyway, and we lose nothing by skipping
+// the static cache.
+export const dynamic = "force-dynamic";
 
 async function fetchAggregateRating() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -40,18 +42,22 @@ async function fetchAggregateRating() {
 }
 
 export default async function HomePage() {
-  const { rating, reviewCount } = await fetchAggregateRating();
+  const [{ rating, reviewCount }, lang] = await Promise.all([
+    fetchAggregateRating(),
+    getServerLang(),
+  ]);
+  const t = getServerT(lang);
   return (
-    <LangProvider>
+    <LangProvider initialLang={lang}>
       <JsonLd rating={rating} reviewCount={reviewCount} />
       <Nav />
       <main id="main">
-        <Hero />
-        <Services />
+        <Hero t={t} />
+        <Services t={t} />
         <Properties />
-        <Principles />
-        <Process />
-        <Founder />
+        <Principles t={t} />
+        <Process t={t} />
+        <Founder t={t} />
         <Testimonials />
         <Contact />
       </main>

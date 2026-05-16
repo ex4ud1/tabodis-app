@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { Arrow, HouseSearch, Pin } from "@/components/icons";
 import { formatPrice } from "@/lib/utils";
+import { useLang } from "@/lib/i18n";
 
 export type PropertyItem = {
   id: string;
@@ -20,14 +21,20 @@ export type PropertyItem = {
   cover: string | null;
 };
 
-const TABS = ["Todo", "Venta", "Alquiler", "Lujo"] as const;
-type Tab = (typeof TABS)[number];
+type TabKey = "all" | "sale" | "rent" | "lux";
 
-const TAB_TYPE: Record<Tab, PropertyItem["type"] | null> = {
-  Todo: null,
-  Venta: "venta",
-  Alquiler: "alquiler",
-  Lujo: "lujo",
+const TAB_TYPE: Record<TabKey, PropertyItem["type"] | null> = {
+  all: null,
+  sale: "venta",
+  rent: "alquiler",
+  lux: "lujo",
+};
+
+const TAB_LABEL_KEY: Record<TabKey, string> = {
+  all: "props.tab_all",
+  sale: "props.tab_sale",
+  rent: "props.tab_rent",
+  lux: "props.tab_lux",
 };
 
 export function PropertiesClient({
@@ -37,7 +44,8 @@ export function PropertiesClient({
   items: PropertyItem[];
   cities: string[];
 }) {
-  const [tab, setTab] = useState<Tab>("Todo");
+  const { t } = useLang();
+  const [tab, setTab] = useState<TabKey>("all");
   const [cityFilter, setCityFilter] = useState<string[]>([]);
 
   const targetType = TAB_TYPE[tab];
@@ -46,40 +54,40 @@ export function PropertiesClient({
       (targetType === null || p.type === targetType) &&
       (cityFilter.length === 0 || cityFilter.includes(p.city)),
   );
-  const isClean = tab === "Todo" && cityFilter.length === 0;
+  const isClean = tab === "all" && cityFilter.length === 0;
   const showFeatured = isClean;
 
   const toggleCity = (c: string) =>
     setCityFilter((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
   const clearAll = () => {
-    setTab("Todo");
+    setTab("all");
     setCityFilter([]);
   };
+  const tabs: TabKey[] = ["all", "sale", "rent", "lux"];
 
   return (
     <section className="section wrap py-24" id="propiedades">
       <div className="grid grid-cols-1 md:grid-cols-[1fr_1.4fr] gap-10 md:gap-16 items-end mb-12">
         <h2 className="font-serif text-[clamp(40px,6vw,88px)] leading-[0.95] tracking-tight text-ink">
-          Busca
+          {t("props.title_l1")}
           <br />
-          tu <em className="italic text-accent-deep">futuro hogar</em>
+          {t("props.title_l2_pre")} <em className="italic text-accent-deep">{t("props.title_em")}</em>
         </h2>
         <div>
           <p className="text-[17px] leading-[1.5] text-ink-soft max-w-[440px] mb-6">
-            Cada propiedad pasa por una verificación legal y técnica antes de listarse. Nada de
-            sorpresas en escritura.
+            {t("props.desc")}
           </p>
           <div className="inline-flex gap-1 bg-paper p-1.5 rounded-full border border-line-soft">
-            {TABS.map((t) => (
+            {tabs.map((k) => (
               <button
-                key={t}
-                onClick={() => setTab(t)}
+                key={k}
+                onClick={() => setTab(k)}
                 className={[
                   "px-5 py-2.5 rounded-full text-[13px] font-medium transition-all duration-200",
-                  t === tab ? "bg-ink text-paper" : "text-ink-soft hover:text-ink",
+                  k === tab ? "bg-ink text-paper" : "text-ink-soft hover:text-ink",
                 ].join(" ")}
               >
-                {t}
+                {t(TAB_LABEL_KEY[k])}
               </button>
             ))}
           </div>
@@ -109,14 +117,14 @@ export function PropertiesClient({
           </div>
           <span className="font-mono text-[11px] tracking-widest uppercase text-ink-soft whitespace-nowrap">
             <strong className="text-ink font-medium">{filtered.length}</strong>{" "}
-            {filtered.length === 1 ? "propiedad" : "propiedades"}
+            {filtered.length === 1 ? t("props.count_one") : t("props.count_many")}
           </span>
           {!isClean && (
             <button
               onClick={clearAll}
               className="text-ink-soft text-xs underline underline-offset-4 hover:text-accent-deep"
             >
-              Limpiar filtros
+              {t("props.clear")}
             </button>
           )}
         </div>
@@ -125,7 +133,17 @@ export function PropertiesClient({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {filtered.length > 0 ? (
           filtered.map((p, i) => (
-            <PropCard key={p.id} p={p} isFeatured={showFeatured && p.featured && i === 0} />
+            <PropCard
+              key={p.id}
+              p={p}
+              isFeatured={showFeatured && p.featured && i === 0}
+              ariaLabelPrefix={t("props.aria_view")}
+              tagSale={t("props.tag_sale")}
+              tagRent={t("props.tag_rent")}
+              statBed={t("props.bed")}
+              statBath={t("props.bath")}
+              statM2={t("props.m2")}
+            />
           ))
         ) : (
           <div className="col-span-full flex flex-col items-center text-center gap-4 py-16 px-6 bg-paper border border-dashed border-line rounded-3xl">
@@ -133,18 +151,20 @@ export function PropertiesClient({
               <HouseSearch />
             </div>
             <h4 className="font-serif text-3xl text-ink">
-              Sin <em className="italic text-accent-deep">coincidencias</em> por ahora
+              {t("props.empty_title_l1")}{" "}
+              <em className="italic text-accent-deep">{t("props.empty_title_em")}</em>{" "}
+              {t("props.empty_title_l2")}
             </h4>
             <p className="text-sm text-ink-soft max-w-[32ch] leading-[1.5]">
-              Cuéntanos qué buscas y te avisamos en cuanto aparezca una propiedad que encaje.
+              {t("props.empty_desc")}
             </p>
             <div className="flex flex-wrap gap-3 justify-center mt-2">
               <a href="#contacto" className="btn-primary">
-                Hablar con Tatiana <Arrow size={14} />
+                {t("props.empty_cta")} <Arrow size={14} />
               </a>
               {!isClean && (
                 <button onClick={clearAll} className="btn-ghost">
-                  Ver todas
+                  {t("props.empty_clear")}
                 </button>
               )}
             </div>
@@ -155,14 +175,33 @@ export function PropertiesClient({
   );
 }
 
-function PropCard({ p, isFeatured }: { p: PropertyItem; isFeatured: boolean }) {
-  const tag = p.type === "alquiler" ? "ALQUILER" : "EN VENTA";
+function PropCard({
+  p,
+  isFeatured,
+  ariaLabelPrefix,
+  tagSale,
+  tagRent,
+  statBed,
+  statBath,
+  statM2,
+}: {
+  p: PropertyItem;
+  isFeatured: boolean;
+  ariaLabelPrefix: string;
+  tagSale: string;
+  tagRent: string;
+  statBed: string;
+  statBath: string;
+  statM2: string;
+}) {
+  const tag = p.type === "alquiler" ? tagRent : tagSale;
+  const isRent = p.type === "alquiler";
 
   return (
     <a
       href={`#propiedades`}
       data-prop-id={p.slug}
-      aria-label={`Ver ${p.title}`}
+      aria-label={`${ariaLabelPrefix} ${p.title}`}
       className={[
         "group relative bg-paper rounded-3xl border border-line-soft overflow-hidden flex flex-col transition-all duration-[0.4s] hover:-translate-y-1 hover:shadow-[0_24px_60px_-28px_rgba(28,39,71,0.25)]",
         isFeatured ? "md:col-span-1 md:row-span-2" : "",
@@ -196,9 +235,9 @@ function PropCard({ p, isFeatured }: { p: PropertyItem; isFeatured: boolean }) {
         <span
           className={[
             "absolute top-4 left-4 px-3 py-1.5 rounded-full font-mono text-[10px] tracking-[0.14em] uppercase border",
-            tag === "EN VENTA"
-              ? "bg-accent text-white border-accent"
-              : "bg-paper text-ink border-line-soft",
+            isRent
+              ? "bg-paper text-ink border-line-soft"
+              : "bg-accent text-white border-accent",
           ].join(" ")}
         >
           {tag}
@@ -215,9 +254,9 @@ function PropCard({ p, isFeatured }: { p: PropertyItem; isFeatured: boolean }) {
           </span>
         </div>
         <div className="grid grid-cols-3 gap-2.5 pt-3.5 border-t border-line-soft mt-auto">
-          <Stat label="Hab." value={p.bedrooms} />
-          <Stat label="Baños" value={p.bathrooms} />
-          <Stat label="m² útiles" value={p.m2} />
+          <Stat label={statBed} value={p.bedrooms} />
+          <Stat label={statBath} value={p.bathrooms} />
+          <Stat label={statM2} value={p.m2} />
         </div>
       </div>
       <span

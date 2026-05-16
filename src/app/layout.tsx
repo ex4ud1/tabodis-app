@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Manrope, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { getServerLang } from "@/lib/lang-server";
 import "./globals.css";
 
 const instrumentSerif = Instrument_Serif({
@@ -79,14 +80,15 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const lang = await getServerLang();
   return (
     <html
-      lang="es"
+      lang={lang}
       data-palette="cream"
       className={`${instrumentSerif.variable} ${manrope.variable} ${jetbrainsMono.variable}`}
     >

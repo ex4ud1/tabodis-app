@@ -1,37 +1,25 @@
-const PRINCIPLES = [
-  {
-    num: "I",
-    name: "Curiosidad",
-    text: "Investigamos cada detalle y analizamos todas las alternativas posibles. Buscamos siempre la mejor solución para cada cliente y cada situación.",
-  },
-  {
-    num: "II",
-    name: "Confianza",
-    text: "Construimos relaciones sólidas y duraderas. Actuamos con honestidad y coherencia en cada paso del proceso.",
-  },
-  {
-    num: "III",
-    name: "Constancia",
-    text: "Acompañamos hasta el cierre, sin desaparecer cuando llega la parte difícil. Cada caso, hasta el final.",
-  },
-];
+import type { TranslateFn } from "@/lib/lang-dict";
 
-export function Principles() {
+export function Principles({ t }: { t: TranslateFn }) {
+  const items = [
+    { num: "I", name: t("principles.p1_name"), text: t("principles.p1_text") },
+    { num: "II", name: t("principles.p2_name"), text: t("principles.p2_text") },
+    { num: "III", name: t("principles.p3_name"), text: t("principles.p3_text") },
+  ];
   return (
     <section className="section wrap py-24" id="nosotros">
       <div className="grid grid-cols-1 md:grid-cols-[1fr_1.4fr] gap-10 md:gap-16 items-end mb-16">
         <h2 className="font-serif text-[clamp(40px,6vw,88px)] leading-[0.95] tracking-tight text-ink">
-          Por qué
+          {t("principles.title_l1")}
           <br />
-          <em className="italic text-accent-deep">elegirnos</em>
+          <em className="italic text-accent-deep">{t("principles.title_em")}</em>
         </h2>
         <p className="text-[17px] leading-[1.5] text-ink-soft max-w-[440px]">
-          Tres principios que sostienen cada decisión, cada llamada, cada firma. Y un cuarto, no
-          escrito, que respetamos siempre.
+          {t("principles.desc")}
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {PRINCIPLES.map((p, i) => (
+        {items.map((p, i) => (
           <div
             key={p.num}
             className={[
@@ -46,7 +34,7 @@ export function Principles() {
                   i === 1 ? "text-accent" : "text-accent-deep"
                 }`}
               >
-                PRINCIPIO {p.num}
+                {t("principles.label")} {p.num}
               </span>
               <h3
                 className={`font-serif text-[56px] leading-[0.95] tracking-tight mt-3 ${

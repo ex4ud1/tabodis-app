@@ -8,9 +8,35 @@ import {
   URGENCY_OPTIONS,
   type LeadInput,
 } from "@/lib/validations";
+import { useLang } from "@/lib/i18n";
+import type { TranslateFn } from "@/lib/lang-dict";
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 const isValidPhone = (v: string) => !v || /^[+]?[\d\s\-().]{7,20}$/.test(v.trim());
+
+// Backend canonical service / urgency / method values live in Spanish. The
+// chip labels users see are translated via the keys below; submission still
+// posts the canonical value so admins read consistent data.
+const SERVICE_LABEL_KEYS: Record<(typeof SERVICES_OPTIONS)[number], string> = {
+  Inmobiliaria: "contact.svc_inmo",
+  Extranjería: "contact.svc_extr",
+  Gestión: "contact.svc_gest",
+  "Asesoría legal": "contact.svc_legal",
+};
+
+const URGENCY_LABEL_KEYS: Record<(typeof URGENCY_OPTIONS)[number], string> = {
+  "Lo antes posible": "contact.urg_asap",
+  "Próximos 3 meses": "contact.urg_3m",
+  "Próximos 6 meses": "contact.urg_6m",
+  "Solo explorando": "contact.urg_explore",
+};
+
+const METHOD_LABEL_KEYS: Record<(typeof METHODS_OPTIONS)[number], string> = {
+  Email: "contact.m_email",
+  Teléfono: "contact.m_phone",
+  WhatsApp: "contact.m_wa",
+  Telegram: "contact.m_tg",
+};
 
 type StepData = {
   services: string[];
@@ -35,6 +61,7 @@ const INITIAL: StepData = {
 };
 
 export function Contact() {
+  const { t, lang } = useLang();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<StepData>(INITIAL);
   const [emailError, setEmailError] = useState("");
@@ -62,25 +89,24 @@ export function Contact() {
   const phoneRequired = data.contact_methods.some((m) =>
     ["Teléfono", "WhatsApp", "Telegram"].includes(m),
   );
-  const steps = [
-    { label: "Servicio", valid: data.services.length > 0 },
-    {
-      label: needsBudget ? "Plan" : "Momento",
-      valid: !!data.urgency && (!needsBudget || typeof data.budget === "number"),
-    },
-    {
-      label: "Contacto",
-      valid:
-        !!data.name &&
-        isValidEmail(data.email) &&
-        data.contact_methods.length > 0 &&
-        (!phoneRequired || (!!data.phone && isValidPhone(data.phone))),
-    },
-    { label: "Mensaje", valid: true },
+  const stepLabels = [
+    t("contact.step_label_service"),
+    needsBudget ? t("contact.step_label_plan") : t("contact.step_label_moment"),
+    t("contact.step_label_contact"),
+    t("contact.step_label_message"),
   ];
-  const total = steps.length;
+  const stepValid = [
+    data.services.length > 0,
+    !!data.urgency && (!needsBudget || typeof data.budget === "number"),
+    !!data.name &&
+      isValidEmail(data.email) &&
+      data.contact_methods.length > 0 &&
+      (!phoneRequired || (!!data.phone && isValidPhone(data.phone))),
+    true,
+  ];
+  const total = 4;
   const isLast = step === total - 1;
-  const canNext = !!steps[step]?.valid;
+  const canNext = stepValid[step];
 
   const submit = async () => {
     setLoading(true);
@@ -95,7 +121,7 @@ export function Contact() {
         urgency: data.urgency as LeadInput["urgency"],
         contact_methods: data.contact_methods as unknown as LeadInput["contact_methods"],
         message: data.message || undefined,
-        language: "es",
+        language: lang,
       };
       const res = await fetch("/api/leads", {
         method: "POST",
@@ -104,11 +130,11 @@ export function Contact() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j?.error ?? "No se pudo enviar el mensaje");
+        throw new Error(j?.error ?? t("contact.err_send"));
       }
       setStep(total);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Error desconocido");
+      setSubmitError(err instanceof Error ? err.message : t("contact.err_unknown"));
     } finally {
       setLoading(false);
     }
@@ -126,9 +152,10 @@ export function Contact() {
     <section className="wrap" id="contacto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center py-20">
         <h3 className="font-serif text-[clamp(40px,7vw,104px)] leading-[0.92] tracking-[-0.03em]">
-          Cuéntanos
+          {t("contact.title_l1")}
           <br />
-          tu <em className="italic text-accent-deep">plan</em>.
+          {t("contact.title_l2_pre")}{" "}
+          <em className="italic text-accent-deep">{t("contact.title_em")}</em>.
         </h3>
 
         <div className="flex flex-col gap-7 min-h-[420px]">
@@ -144,7 +171,7 @@ export function Contact() {
                     style={{ transform: `scaleX(${(step + 1) / total})` }}
                   />
                 </div>
-                <span>{steps[step].label}</span>
+                <span>{stepLabels[step]}</span>
               </div>
 
               <div
@@ -152,9 +179,16 @@ export function Contact() {
                 className="flex flex-col gap-5 flex-1"
                 style={{ animation: "slide-up 0.45s cubic-bezier(0.2,0.8,0.2,1)" }}
               >
-                {step === 0 && <Step0 selected={data.services} onToggle={(v) => toggleArr("services", v)} />}
+                {step === 0 && (
+                  <Step0
+                    t={t}
+                    selected={data.services}
+                    onToggle={(v) => toggleArr("services", v)}
+                  />
+                )}
                 {step === 1 && (
                   <Step1
+                    t={t}
                     budget={data.budget}
                     urgency={data.urgency}
                     showBudget={needsBudget}
@@ -164,6 +198,7 @@ export function Contact() {
                 )}
                 {step === 2 && (
                   <Step2
+                    t={t}
                     data={data}
                     update={update}
                     toggleMethod={(v) => toggleArr("contact_methods", v)}
@@ -176,6 +211,7 @@ export function Contact() {
                 )}
                 {step === 3 && (
                   <Step3
+                    t={t}
                     data={data}
                     update={update}
                   />
@@ -191,7 +227,7 @@ export function Contact() {
                   onClick={() => setStep((s) => Math.max(0, s - 1))}
                 >
                   <ArrowLeft size={14} />
-                  Atrás
+                  {t("contact.atras")}
                 </button>
                 <button
                   className="btn-primary ml-auto"
@@ -202,7 +238,7 @@ export function Contact() {
                     <span className="btn-spinner" />
                   ) : (
                     <>
-                      {isLast ? "Enviar" : "Siguiente"} <Arrow size={14} />
+                      {isLast ? t("contact.enviar") : t("contact.siguiente")} <Arrow size={14} />
                     </>
                   )}
                 </button>
@@ -217,13 +253,12 @@ export function Contact() {
                 ✓
               </div>
               <h4 className="font-serif text-[clamp(28px,3vw,42px)] leading-[1.05] tracking-tight text-ink">
-                Mensaje <em className="italic text-accent-deep">recibido</em>.
+                {t("contact.success_l1")}{" "}
+                <em className="italic text-accent-deep">{t("contact.success_em")}</em>.
               </h4>
-              <p className="text-sm text-ink-soft max-w-[360px]">
-                Te contactaremos en la mayor brevedad posible.
-              </p>
+              <p className="text-sm text-ink-soft max-w-[360px]">{t("contact.success_sub")}</p>
               <button onClick={reset} className="btn-ghost mt-3">
-                Enviar otro mensaje
+                {t("contact.success_again")}
               </button>
             </div>
           )}
@@ -233,13 +268,23 @@ export function Contact() {
   );
 }
 
-function Step0({ selected, onToggle }: { selected: string[]; onToggle: (v: string) => void }) {
+function Step0({
+  t,
+  selected,
+  onToggle,
+}: {
+  t: TranslateFn;
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
   return (
     <>
       <h4 className="font-serif text-[clamp(28px,3vw,42px)] leading-[1.05] tracking-tight text-ink max-w-[18ch]">
-        ¿En qué podemos <em className="italic text-accent-deep">ayudarte</em>?
+        {t("contact.step0_q_pre")}{" "}
+        <em className="italic text-accent-deep">{t("contact.step0_q_em")}</em>
+        {t("contact.step0_q_post")}
       </h4>
-      <p className="text-sm text-ink-soft -mt-2">Selecciona uno o varios servicios.</p>
+      <p className="text-sm text-ink-soft -mt-2">{t("contact.step0_hint")}</p>
       <div className="flex flex-wrap gap-2 pt-1">
         {SERVICES_OPTIONS.map((s) => {
           const on = selected.includes(s);
@@ -263,7 +308,7 @@ function Step0({ selected, onToggle }: { selected: string[]; onToggle: (v: strin
               >
                 {on ? "✓" : "+"}
               </span>
-              {s}
+              {t(SERVICE_LABEL_KEYS[s])}
             </button>
           );
         })}
@@ -273,12 +318,14 @@ function Step0({ selected, onToggle }: { selected: string[]; onToggle: (v: strin
 }
 
 function Step1({
+  t,
   budget,
   urgency,
   showBudget,
   onBudget,
   onUrgency,
 }: {
+  t: TranslateFn;
   budget: number;
   urgency: string;
   showBudget: boolean;
@@ -289,7 +336,8 @@ function Step1({
   const pct = (budget / MAX) * 100;
   const fmt = (k: number) =>
     k >= 1000 ? `€${(k / 1000).toFixed(k % 1000 === 0 ? 0 : 1)}M` : `€${k}k`;
-  const label = budget >= MAX ? "Más de €3M" : `Hasta ${fmt(budget)}`;
+  const label =
+    budget >= MAX ? t("contact.budget_more") : `${t("contact.budget_upto")} ${fmt(budget)}`;
   const [head, ...rest] = label.split(" ");
 
   return (
@@ -297,11 +345,15 @@ function Step1({
       <h4 className="font-serif text-[clamp(28px,3vw,42px)] leading-[1.05] tracking-tight text-ink max-w-[18ch]">
         {showBudget ? (
           <>
-            Tu <em className="italic text-accent-deep">presupuesto</em> y momento.
+            {t("contact.step1_q_budget_pre")}{" "}
+            <em className="italic text-accent-deep">{t("contact.step1_q_budget_em")}</em>{" "}
+            {t("contact.step1_q_budget_post")}
           </>
         ) : (
           <>
-            ¿Cuándo te <em className="italic text-accent-deep">gustaría</em> empezar?
+            {t("contact.step1_q_only_pre")}{" "}
+            <em className="italic text-accent-deep">{t("contact.step1_q_only_em")}</em>{" "}
+            {t("contact.step1_q_only_post")}
           </>
         )}
       </h4>
@@ -309,7 +361,7 @@ function Step1({
       {showBudget && (
         <div className="flex flex-col gap-2 mt-2">
           <label className="font-mono text-[10px] tracking-[0.16em] uppercase text-ink-soft">
-            Presupuesto aproximado
+            {t("contact.budget_label")}
           </label>
           <div className="flex flex-col gap-3.5 py-2">
             <div className="flex items-baseline gap-2 font-serif">
@@ -326,7 +378,7 @@ function Step1({
               onChange={(e) => onBudget(Number(e.target.value))}
               className="range-track"
               style={{ ["--p" as string]: `${pct}%` }}
-              aria-label="Presupuesto"
+              aria-label={t("contact.budget_label")}
             />
             <div className="flex justify-between font-mono text-[10px] tracking-[0.14em] uppercase text-ink-soft">
               <span>€50k</span>
@@ -338,7 +390,7 @@ function Step1({
 
       <div className="flex flex-col gap-2 mt-3">
         <label className="font-mono text-[10px] tracking-[0.16em] uppercase text-ink-soft">
-          ¿Cuándo te gustaría empezar?
+          {t("contact.urgency_label")}
         </label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           {URGENCY_OPTIONS.map((b) => {
@@ -360,7 +412,7 @@ function Step1({
                     <span className="absolute inset-[2px] rounded-full bg-accent" />
                   )}
                 </span>
-                {b}
+                {t(URGENCY_LABEL_KEYS[b])}
               </button>
             );
           })}
@@ -371,6 +423,7 @@ function Step1({
 }
 
 function Step2({
+  t,
   data,
   update,
   toggleMethod,
@@ -380,6 +433,7 @@ function Step2({
   setPhoneError,
   phoneRequired,
 }: {
+  t: TranslateFn;
   data: StepData;
   update: <K extends keyof StepData>(k: K, v: StepData[K]) => void;
   toggleMethod: (v: string) => void;
@@ -392,27 +446,29 @@ function Step2({
   return (
     <>
       <h4 className="font-serif text-[clamp(28px,3vw,42px)] leading-[1.05] tracking-tight text-ink max-w-[18ch]">
-        ¿Cómo te <em className="italic text-accent-deep">encontramos</em>?
+        {t("contact.step2_q_pre")}{" "}
+        <em className="italic text-accent-deep">{t("contact.step2_q_em")}</em>
+        {t("contact.step2_q_post")}
       </h4>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <label className="font-mono text-[10px] tracking-[0.16em] uppercase text-ink-soft">
-            Nombre
+            {t("contact.name_label")}
           </label>
           <input
             required
             type="text"
             value={data.name}
             onChange={(e) => update("name", e.target.value)}
-            placeholder="Tu nombre"
+            placeholder={t("contact.name_ph")}
             className="border-0 border-b border-line bg-transparent py-2.5 text-base outline-none focus:border-accent transition-colors"
             style={{ fontSize: 16 }}
           />
         </div>
         <div className="flex flex-col gap-2">
           <label className="font-mono text-[10px] tracking-[0.16em] uppercase text-ink-soft">
-            Email
+            {t("contact.email_label")}
           </label>
           <input
             required
@@ -424,10 +480,10 @@ function Step2({
             }}
             onBlur={(e) =>
               setEmailError(
-                e.target.value && !isValidEmail(e.target.value) ? "Introduce un email válido" : "",
+                e.target.value && !isValidEmail(e.target.value) ? t("contact.email_err") : "",
               )
             }
-            placeholder="tu@email.com"
+            placeholder={t("contact.email_ph")}
             className={[
               "border-0 border-b bg-transparent py-2.5 text-base outline-none transition-colors",
               emailError ? "border-danger" : "border-line focus:border-accent",
@@ -440,7 +496,7 @@ function Step2({
 
       <div className="flex flex-col gap-2">
         <label className="font-mono text-[10px] tracking-[0.16em] uppercase text-ink-soft">
-          Teléfono{phoneRequired ? "" : " (opcional)"}
+          {phoneRequired ? t("contact.phone_label_req") : t("contact.phone_label")}
         </label>
         <input
           type="tel"
@@ -453,13 +509,13 @@ function Step2({
           onBlur={(e) =>
             setPhoneError(
               e.target.value && !isValidPhone(e.target.value)
-                ? "Introduce un teléfono válido"
+                ? t("contact.phone_err_invalid")
                 : phoneRequired && !e.target.value
-                  ? "El teléfono es obligatorio para el método seleccionado"
+                  ? t("contact.phone_err_required")
                   : "",
             )
           }
-          placeholder="+34 600 000 000"
+          placeholder={t("contact.phone_ph")}
           className={[
             "border-0 border-b bg-transparent py-2.5 text-base outline-none transition-colors",
             phoneError ? "border-danger" : "border-line focus:border-accent",
@@ -471,7 +527,7 @@ function Step2({
 
       <div className="flex flex-col gap-2">
         <label className="font-mono text-[10px] tracking-[0.16em] uppercase text-ink-soft">
-          Cómo prefieres que te contactemos
+          {t("contact.method_label")}
         </label>
         <div className="flex flex-wrap gap-2 pt-1">
           {METHODS_OPTIONS.map((m) => {
@@ -496,7 +552,7 @@ function Step2({
                 >
                   {on ? "✓" : "+"}
                 </span>
-                {m}
+                {t(METHOD_LABEL_KEYS[m])}
               </button>
             );
           })}
@@ -507,9 +563,11 @@ function Step2({
 }
 
 function Step3({
+  t,
   data,
   update,
 }: {
+  t: TranslateFn;
   data: StepData;
   update: <K extends keyof StepData>(k: K, v: StepData[K]) => void;
 }) {
@@ -519,23 +577,24 @@ function Step3({
   return (
     <>
       <h4 className="font-serif text-[clamp(28px,3vw,42px)] leading-[1.05] tracking-tight text-ink max-w-[18ch]">
-        Algo más que <em className="italic text-accent-deep">quieras</em> contarnos.
+        {t("contact.step3_q_pre")}{" "}
+        <em className="italic text-accent-deep">{t("contact.step3_q_em")}</em>{" "}
+        {t("contact.step3_q_post")}
       </h4>
-      <p className="text-sm text-ink-soft -mt-2">
-        Opcional. Cuanto más contexto, mejor preparamos la primera llamada.
-      </p>
+      <p className="text-sm text-ink-soft -mt-2">{t("contact.step3_hint")}</p>
       <div className="rounded-xl bg-bg-2 px-4 py-3 text-[13px] text-ink-soft mb-1">
         <strong className="block mb-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-ink">
-          Resumen
+          {t("contact.summary")}
         </strong>
-        {data.services.join(", ")}
-        {showBudget && ` · Hasta ${fmt(data.budget)}`} · {data.urgency}
+        {data.services.map((s) => t(SERVICE_LABEL_KEYS[s as keyof typeof SERVICE_LABEL_KEYS] ?? "")).filter(Boolean).join(", ")}
+        {showBudget && ` · ${t("contact.budget_upto")} ${fmt(data.budget)}`} ·{" "}
+        {t(URGENCY_LABEL_KEYS[data.urgency as keyof typeof URGENCY_LABEL_KEYS] ?? "")}
       </div>
       <textarea
         rows={4}
         value={data.message}
         onChange={(e) => update("message", e.target.value)}
-        placeholder="Tu situación, dudas, lo que sea..."
+        placeholder={t("contact.message_ph")}
         className="border-0 border-b border-line bg-transparent py-2.5 text-base outline-none focus:border-accent transition-colors resize-none"
         style={{ fontSize: 16 }}
       />

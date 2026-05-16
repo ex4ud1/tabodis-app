@@ -1,4 +1,5 @@
 import { PhotoUploader } from "./PhotoUploader";
+import { DeletePropertyButton } from "./DeletePropertyButton";
 
 type Initial = {
   title?: string;
@@ -57,7 +58,8 @@ export function PropertyForm({
   );
 
   return (
-    <form action={action} className="flex flex-col gap-6 max-w-3xl">
+    <div className="max-w-3xl">
+    <form action={action} className="flex flex-col gap-6">
       <Field name="title" label="Título *" defaultValue={i.title} required />
 
       <label className="flex flex-col gap-1.5">
@@ -140,17 +142,17 @@ export function PropertyForm({
         <button type="submit" className="btn-primary">
           {submitLabel}
         </button>
-        {onDelete && (
-          <form action={onDelete}>
-            <button
-              type="submit"
-              className="text-danger text-[13px] underline underline-offset-4 hover:no-underline"
-            >
-              Eliminar
-            </button>
-          </form>
-        )}
       </div>
     </form>
+    {/* Delete is intentionally rendered outside the main <form>: HTML5
+        forbids nested forms, and the previous implementation collapsed the
+        inner delete form, so clicking "Eliminar" silently submitted the
+        outer update form instead of deleting. */}
+    {onDelete && (
+      <div className="mt-4 flex justify-end">
+        <DeletePropertyButton onDelete={onDelete} title={i.title ?? ""} />
+      </div>
+    )}
+    </div>
   );
 }

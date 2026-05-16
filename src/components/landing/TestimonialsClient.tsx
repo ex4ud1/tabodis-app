@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Arrow, ArrowLeft, Close, Plus } from "@/components/icons";
+import { useLang } from "@/lib/i18n";
 
 export type Testimonial = {
   id: string;
@@ -13,9 +14,16 @@ export type Testimonial = {
   quote: string;
 };
 
-const REVIEW_SERVICES = ["Inmobiliaria", "Extranjería", "Gestión"];
+// Backend stores service tags in Spanish (canonical). The chip labels users
+// see in the form are translated via t("contact.svc_*") for each option.
+const REVIEW_SERVICE_KEYS: { value: string; labelKey: string }[] = [
+  { value: "Inmobiliaria", labelKey: "contact.svc_inmo" },
+  { value: "Extranjería", labelKey: "contact.svc_extr" },
+  { value: "Gestión", labelKey: "contact.svc_gest" },
+];
 
 export function TestimonialsClient({ items }: { items: Testimonial[] }) {
+  const { t } = useLang();
   const [idx, setIdx] = useState(0);
   const [exiting, setExiting] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -84,11 +92,11 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error ?? "No se pudo enviar la reseña");
+        throw new Error(err?.error ?? t("testi.modal_err_send"));
       }
       setSubmitted(true);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Error desconocido");
+      setSubmitError(err instanceof Error ? err.message : t("testi.modal_err_unknown"));
     } finally {
       setLoading(false);
     }
@@ -106,7 +114,7 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
         </span>
         <div className="flex justify-between items-end mb-14 gap-6 relative z-[2] flex-wrap">
           <h3 className="font-serif text-[clamp(40px,5vw,72px)] leading-[0.95] tracking-tight max-w-[12ch]">
-            Lo que <em className="italic text-accent">dicen</em>
+            {t("testi.title_l1")} <em className="italic text-accent">{t("testi.title_em")}</em>
           </h3>
           <div className="flex gap-3 items-center">
             <button
@@ -114,19 +122,19 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-accent text-white text-xs font-medium transition-all hover:bg-accent-deep"
             >
               <Plus />
-              Dejar reseña
+              {t("testi.add")}
             </button>
             <div className="flex gap-2">
               <button
                 onClick={() => goTo((idx - 1 + items.length) % items.length)}
-                aria-label="Anterior"
+                aria-label={t("testi.prev")}
                 className="w-12 h-12 rounded-full border border-paper/30 hover:bg-accent hover:border-accent transition-all flex items-center justify-center"
               >
                 <ArrowLeft size={18} />
               </button>
               <button
                 onClick={() => goTo((idx + 1) % items.length)}
-                aria-label="Siguiente"
+                aria-label={t("testi.next")}
                 className="w-12 h-12 rounded-full border border-paper/30 hover:bg-accent hover:border-accent transition-all flex items-center justify-center"
               >
                 <Arrow size={18} />
@@ -143,7 +151,7 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
         >
           <div
             className="flex gap-1 mb-6 text-lg"
-            aria-label={`${c.rating} de 5 estrellas`}
+            aria-label={`${c.rating} / 5`}
           >
             {[1, 2, 3, 4, 5].map((n) => (
               <span key={n} className={n <= c.rating ? "text-accent" : "text-paper/25"}>
@@ -180,7 +188,7 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
                 <button
                   key={i}
                   onClick={() => goTo(i)}
-                  aria-label={`Reseña ${i + 1}`}
+                  aria-label={`${t("testi.modal_review")} ${i + 1}`}
                   className={[
                     "h-1.5 rounded-full transition-all",
                     i === idx ? "w-5 bg-accent" : "w-1.5 bg-paper/30",
@@ -206,7 +214,7 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
           >
             <button
               onClick={closeReview}
-              aria-label="Cerrar"
+              aria-label={t("testi.close")}
               className="absolute top-5 right-5 w-9 h-9 rounded-full border border-line text-ink hover:bg-ink hover:text-paper transition-all"
             >
               <Close />
@@ -214,17 +222,16 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
 
             {!submitted ? (
               <>
-                <span className="eyebrow text-accent-deep">Comparte tu experiencia</span>
+                <span className="eyebrow text-accent-deep">{t("testi.modal_eyebrow")}</span>
                 <h4 className="font-serif text-[44px] leading-none tracking-tight my-3">
-                  Dejar una <em className="italic text-accent-deep">reseña</em>
+                  {t("testi.modal_title_pre")}{" "}
+                  <em className="italic text-accent-deep">{t("testi.modal_title_em")}</em>
                 </h4>
-                <p className="text-sm text-ink-soft mb-7">
-                  Tu testimonio ayuda a quienes consideran dar el mismo paso.
-                </p>
+                <p className="text-sm text-ink-soft mb-7">{t("testi.modal_sub")}</p>
                 <form onSubmit={onSubmit} className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <label className="font-mono text-[10px] tracking-[0.16em] uppercase text-ink-soft">
-                      Valoración
+                      {t("testi.modal_rating")}
                     </label>
                     <div className={["flex gap-1.5", starsError ? "stars-err" : ""].join(" ")}>
                       {[1, 2, 3, 4, 5].map((n) => (
@@ -235,7 +242,7 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
                             setStars(n);
                             setStarsError(false);
                           }}
-                          aria-label={`${n} estrellas`}
+                          aria-label={`${n} / 5`}
                           className={[
                             "text-[28px] transition-all",
                             n <= stars ? "text-accent" : "text-line",
@@ -247,21 +254,21 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
                         </button>
                       ))}
                     </div>
-                    {starsError && <span className="field-errmsg">Selecciona una valoración</span>}
+                    {starsError && <span className="field-errmsg">{t("testi.modal_rating_err")}</span>}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Nombre">
+                    <Field label={t("testi.modal_name")}>
                       <input
                         required
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Tu nombre"
+                        placeholder={t("testi.modal_name_ph")}
                         className="border-0 border-b border-line bg-transparent py-2.5 text-base outline-none focus:border-accent transition-colors"
                       />
                     </Field>
-                    <Field label="Ciudad">
+                    <Field label={t("testi.modal_city")}>
                       <input
                         required
                         type="text"
@@ -273,17 +280,17 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
                     </Field>
                   </div>
 
-                  <Field label="Servicios recibidos">
+                  <Field label={t("testi.modal_services")}>
                     <div className="flex flex-wrap gap-2 pt-1">
-                      {REVIEW_SERVICES.map((s) => {
-                        const on = services.includes(s);
+                      {REVIEW_SERVICE_KEYS.map((s) => {
+                        const on = services.includes(s.value);
                         return (
                           <button
-                            key={s}
+                            key={s.value}
                             type="button"
                             onClick={() =>
                               setServices((prev) =>
-                                prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
+                                prev.includes(s.value) ? prev.filter((x) => x !== s.value) : [...prev, s.value],
                               )
                             }
                             className={[
@@ -301,20 +308,20 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
                             >
                               {on ? "✓" : "+"}
                             </span>
-                            {s}
+                            {t(s.labelKey)}
                           </button>
                         );
                       })}
                     </div>
                   </Field>
 
-                  <Field label="Tu reseña">
+                  <Field label={t("testi.modal_review")}>
                     <textarea
                       required
                       rows={4}
                       value={body}
                       onChange={(e) => setBody(e.target.value)}
-                      placeholder="Cuéntanos en pocas líneas..."
+                      placeholder={t("testi.modal_review_ph")}
                       minLength={10}
                       className="border-0 border-b border-line bg-transparent py-2.5 text-base outline-none focus:border-accent transition-colors resize-none min-h-[60px]"
                     />
@@ -329,11 +336,11 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
                   >
                     {loading ? (
                       <>
-                        <span className="btn-spinner" /> Publicando...
+                        <span className="btn-spinner" /> {t("testi.modal_submitting")}
                       </>
                     ) : (
                       <>
-                        Publicar reseña <Arrow size={14} />
+                        {t("testi.modal_submit")} <Arrow size={14} />
                       </>
                     )}
                   </button>
@@ -348,11 +355,9 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
                   ✓
                 </div>
                 <h4 className="font-serif text-[44px] leading-none tracking-tight mt-4">
-                  Gracias.
+                  {t("testi.modal_thanks")}
                 </h4>
-                <p className="text-sm text-ink-soft mt-2">
-                  Revisamos cada reseña antes de publicarla.
-                </p>
+                <p className="text-sm text-ink-soft mt-2">{t("testi.modal_thanks_sub")}</p>
               </div>
             )}
           </div>

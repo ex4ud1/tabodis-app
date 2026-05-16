@@ -1,660 +1,102 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  COOKIE_KEY,
+  COOKIE_MAX_AGE,
+  STORAGE_KEY,
+  isLang,
+  translate,
+  type Lang,
+  type TranslateFn,
+} from "./lang-dict";
 
-export type Lang = "es" | "uk" | "ru";
-
-const DICT: Record<Lang, Record<string, string>> = {
-  es: {
-    // Nav
-    "nav.inicio": "Inicio",
-    "nav.propiedades": "Propiedades",
-    "nav.servicios": "Servicios",
-    "nav.nosotros": "Nosotros",
-    "nav.testimonios": "Reseñas",
-    "nav.contacto": "Contacto",
-    "nav.cta": "Reservar llamada",
-    // Hero
-    "hero.eyebrow_left": "Est. 2019 — Alicante, ES",
-    "hero.eyebrow_right": "Asesoría privada · solo cita previa",
-    "hero.h1_l1": "Bienes raíces",
-    "hero.h1_l2_pre": "y",
-    "hero.h1_l2_em": "gestión",
-    "hero.h1_l3": "integral.",
-    "hero.lede_pre": "Una consultora privada que centraliza",
-    "hero.lede_em": "todo",
-    "hero.lede_post":
-      "lo que necesitas para establecerte en España — desde encontrar y negociar tu casa ideal hasta resolver cada documento legal.",
-    "hero.cta_primary": "Ver propiedades",
-    "hero.cta_secondary": "Hablar con Tatiana",
-    // Services
-    "services.title_l1": "Nuestros",
-    "services.title_em": "servicios",
-    "services.desc":
-      "Tres pilares que cubren cada momento de tu transición: encontrar, asentarte y vivir. Cada uno coordinado por la misma persona, sin intermediarios cambiantes.",
-    "services.s1_title": "Inmobiliaria",
-    "services.s1_desc":
-      "No nos limitamos a enseñar propiedades; buscamos, filtramos y negociamos la vivienda ideal basándonos en tus intereses y presupuesto.",
-    "services.s2_title": "Extranjería",
-    "services.s2_desc":
-      "Eliminamos las barreras burocráticas para garantizar una estancia legal y operativa en España desde el primer día.",
-    "services.s3_title": "Gestión",
-    "services.s3_desc":
-      "Actuamos como intérpretes y gestores para las necesidades cotidianas del hogar, la familia y los negocios.",
-    "services.aria_consult": "Consultar sobre",
-    // Properties
-    "props.title_l1": "Busca",
-    "props.title_l2_pre": "tu",
-    "props.title_em": "futuro hogar",
-    "props.desc":
-      "Cada propiedad pasa por una verificación legal y técnica antes de listarse. Nada de sorpresas en escritura.",
-    "props.tab_all": "Todo",
-    "props.tab_sale": "Venta",
-    "props.tab_rent": "Alquiler",
-    "props.tab_lux": "Lujo",
-    "props.count_one": "propiedad",
-    "props.count_many": "propiedades",
-    "props.clear": "Limpiar filtros",
-    "props.aria_filter": "Filtrar por ciudad",
-    "props.empty_title_l1": "Sin",
-    "props.empty_title_em": "coincidencias",
-    "props.empty_title_l2": "por ahora",
-    "props.empty_desc":
-      "Cuéntanos qué buscas y te avisamos en cuanto aparezca una propiedad que encaje.",
-    "props.empty_cta": "Hablar con Tatiana",
-    "props.empty_clear": "Ver todas",
-    "props.fav_add": "Añadir a favoritos",
-    "props.fav_remove": "Quitar de favoritos",
-    "props.tag_sale": "EN VENTA",
-    "props.tag_rent": "ALQUILER",
-    "props.bed": "Hab.",
-    "props.bath": "Baños",
-    "props.m2": "m² útiles",
-    // Principles
-    "principles.title_l1": "Por qué",
-    "principles.title_em": "elegirnos",
-    "principles.desc":
-      "Tres principios que sostienen cada decisión, cada llamada, cada firma. Y un cuarto, no escrito, que respetamos siempre.",
-    "principles.label": "PRINCIPIO",
-    "principles.p1_name": "Curiosidad",
-    "principles.p1_text":
-      "Investigamos cada detalle y analizamos todas las alternativas posibles. Buscamos siempre la mejor solución para cada cliente y cada situación.",
-    "principles.p2_name": "Confianza",
-    "principles.p2_text":
-      "Construimos relaciones sólidas y duraderas. Actuamos con honestidad y coherencia en cada paso del proceso.",
-    "principles.p3_name": "Constancia",
-    "principles.p3_text":
-      "Acompañamos hasta el cierre, sin desaparecer cuando llega la parte difícil. Cada caso, hasta el final.",
-    // Process
-    "process.title_l1": "Cómo",
-    "process.title_em": "trabajamos",
-    "process.desc":
-      "Cuatro pasos. Una sola persona contigo en todos. Sin transferencias internas, sin perder el hilo de tu historia.",
-    "process.s1_title": "Escuchamos",
-    "process.s1_text":
-      "Analizamos tu caso, tus objetivos y tu contexto para ofrecerte una solución adaptada a tus necesidades reales.",
-    "process.s2_title": "Preparamos",
-    "process.s2_text":
-      "Revisamos documentación, opciones y escenarios para evitar riesgos y anticiparnos a cualquier imprevisto.",
-    "process.s3_title": "Acompañamos",
-    "process.s3_text":
-      "Te asistimos en negociaciones, trámites y gestiones, coordinándonos con agencias, entidades y profesionales.",
-    "process.s4_title": "Cerramos",
-    "process.s4_text":
-      "Supervisamos todo el proceso hasta su finalización, asegurando que cada paso se complete con claridad.",
-    // Founder
-    "founder.eyebrow": "Quien te acompaña · Fundadora",
-    "founder.placeholder": "Founder portrait",
-    "founder.quote":
-      "Mi labor consiste en simplificar tu carga administrativa a través de un asesoramiento personal e íntegro. Creo en el poder de una actitud positiva y en la lealtad hacia los objetivos de quienes confían en mí.",
-    "founder.mission_label": "MISIÓN",
-    "founder.mission":
-      "Optimizar el tiempo de quienes confían su transición a España.",
-    "founder.vision_label": "VISIÓN",
-    "founder.vision": "Integridad como estándar de éxito.",
-    // Testimonials
-    "testi.title_l1": "Lo que",
-    "testi.title_em": "dicen",
-    "testi.add": "Dejar reseña",
-    "testi.prev": "Anterior",
-    "testi.next": "Siguiente",
-    "testi.modal_eyebrow": "Comparte tu experiencia",
-    "testi.modal_title_pre": "Dejar una",
-    "testi.modal_title_em": "reseña",
-    "testi.modal_sub":
-      "Tu testimonio ayuda a quienes consideran dar el mismo paso.",
-    "testi.modal_rating": "Valoración",
-    "testi.modal_rating_err": "Selecciona una valoración",
-    "testi.modal_name": "Nombre",
-    "testi.modal_name_ph": "Tu nombre",
-    "testi.modal_city": "Ciudad",
-    "testi.modal_services": "Servicios recibidos",
-    "testi.modal_review": "Tu reseña",
-    "testi.modal_review_ph": "Cuéntanos en pocas líneas...",
-    "testi.modal_submit": "Publicar reseña",
-    "testi.modal_submitting": "Publicando...",
-    "testi.modal_thanks": "Gracias.",
-    "testi.modal_thanks_sub": "Revisamos cada reseña antes de publicarla.",
-    "testi.close": "Cerrar",
-    // Contact
-    "contact.title_l1": "Cuéntanos",
-    "contact.title_l2_pre": "tu",
-    "contact.title_em": "plan",
-    "contact.atras": "Atrás",
-    "contact.siguiente": "Siguiente",
-    "contact.enviar": "Enviar",
-    "contact.step0_q_pre": "¿En qué podemos",
-    "contact.step0_q_em": "ayudarte",
-    "contact.step0_q_post": "?",
-    "contact.step0_hint": "Selecciona uno o varios servicios.",
-    "contact.svc_inmo": "Inmobiliaria",
-    "contact.svc_extr": "Extranjería",
-    "contact.svc_gest": "Gestión",
-    "contact.svc_legal": "Asesoría legal",
-    "contact.step1_q_budget_pre": "Tu",
-    "contact.step1_q_budget_em": "presupuesto",
-    "contact.step1_q_budget_post": "y momento.",
-    "contact.step1_q_only_pre": "¿Cuándo te",
-    "contact.step1_q_only_em": "gustaría",
-    "contact.step1_q_only_post": "empezar?",
-    "contact.budget_label": "Presupuesto aproximado",
-    "contact.budget_upto": "Hasta",
-    "contact.budget_more": "Más de €3M",
-    "contact.urgency_label": "¿Cuándo te gustaría empezar?",
-    "contact.urg_asap": "Lo antes posible",
-    "contact.urg_3m": "Próximos 3 meses",
-    "contact.urg_6m": "Próximos 6 meses",
-    "contact.urg_explore": "Solo explorando",
-    "contact.step2_q_pre": "¿Cómo te",
-    "contact.step2_q_em": "encontramos",
-    "contact.step2_q_post": "?",
-    "contact.name_label": "Nombre",
-    "contact.name_ph": "Tu nombre",
-    "contact.email_label": "Email",
-    "contact.email_ph": "tu@email.com",
-    "contact.email_err": "Introduce un email válido",
-    "contact.phone_label": "Teléfono (opcional)",
-    "contact.phone_ph": "+34 600 000 000",
-    "contact.method_label": "Cómo prefieres que te contactemos",
-    "contact.m_email": "Email",
-    "contact.m_phone": "Teléfono",
-    "contact.m_wa": "WhatsApp",
-    "contact.m_tg": "Telegram",
-    "contact.step3_q_pre": "Algo más que",
-    "contact.step3_q_em": "quieras",
-    "contact.step3_q_post": "contarnos.",
-    "contact.step3_hint":
-      "Opcional. Cuanto más contexto, mejor preparamos la primera llamada.",
-    "contact.summary": "Resumen",
-    "contact.message_ph": "Tu situación, dudas, lo que sea...",
-    "contact.success_l1": "Mensaje",
-    "contact.success_em": "recibido",
-    "contact.success_sub_pre": "Te contactaremos en menos de 24h por",
-    "contact.success_sub_to": "a",
-    "contact.success_again": "Enviar otro mensaje",
-    // Footer
-    "footer.servicios": "Servicios",
-    "footer.compania": "Compañía",
-    "footer.contacto": "Contacto",
-    "footer.about": "Sobre nosotros",
-    "footer.team": "Equipo",
-    "footer.cases": "Casos",
-    "footer.press": "Prensa",
-    "footer.tagline":
-      "Expertos en inmobiliaria, extranjería y gestión. Facilitamos tu vida en España desde 2019.",
-    "footer.address": "Av. de la Estación, 12\nAlicante, ES",
-    "footer.legal": "Privacidad · Cookies · Aviso legal",
-    // Cookie banner
-    "cookie.text":
-      "Usamos cookies esenciales para que el sitio funcione, y opcionales para entender cómo se navega y mejorarlo.",
-    "cookie.accept_all": "Aceptar todas",
-    "cookie.essential": "Solo esenciales",
-    // Common
-    "common.theme_light": "Modo claro",
-    "common.theme_dark": "Modo oscuro",
-    "common.skip_to_content": "Saltar al contenido",
-    "common.back_top": "Volver arriba",
-    "common.chat": "Contactar por WhatsApp",
-  },
-  uk: {
-    "nav.inicio": "Головна",
-    "nav.propiedades": "Нерухомість",
-    "nav.servicios": "Послуги",
-    "nav.nosotros": "Про нас",
-    "nav.testimonios": "Відгуки",
-    "nav.contacto": "Контакти",
-    "nav.cta": "Зарезервувати дзвінок",
-    "hero.eyebrow_left": "З 2019 року — Аліканте, Іспанія",
-    "hero.eyebrow_right": "Приватна консультація · лише за записом",
-    "hero.h1_l1": "Нерухомість",
-    "hero.h1_l2_pre": "та",
-    "hero.h1_l2_em": "повний",
-    "hero.h1_l3": "сервіс.",
-    "hero.lede_pre": "Приватний консультант, що централізує",
-    "hero.lede_em": "все",
-    "hero.lede_post":
-      "що потрібно для облаштування в Іспанії — від пошуку та переговорів щодо ідеальної оселі до вирішення кожного юридичного питання.",
-    "hero.cta_primary": "Дивитись об'єкти",
-    "hero.cta_secondary": "Поговорити з Тетяною",
-    "services.title_l1": "Наші",
-    "services.title_em": "послуги",
-    "services.desc":
-      "Три напрямки, що покривають кожен момент вашої переїзду: знайти, влаштуватися, жити. Усе координує одна людина, без посередників.",
-    "services.s1_title": "Нерухомість",
-    "services.s1_desc":
-      "Ми не просто показуємо об'єкти; шукаємо, фільтруємо й ведемо переговори щодо ідеального житла на основі ваших інтересів та бюджету.",
-    "services.s2_title": "Легалізація",
-    "services.s2_desc":
-      "Усуваємо бюрократичні бар'єри, щоб гарантувати законне та практичне перебування в Іспанії з першого дня.",
-    "services.s3_title": "Сервіс",
-    "services.s3_desc":
-      "Виступаємо перекладачами та менеджерами щодо повсякденних потреб дому, родини та бізнесу.",
-    "services.aria_consult": "Консультація щодо",
-    "props.title_l1": "Шукай",
-    "props.title_l2_pre": "свій",
-    "props.title_em": "майбутній дім",
-    "props.desc":
-      "Кожен об'єкт проходить юридичну та технічну перевірку перед публікацією. Ніяких сюрпризів при підписанні.",
-    "props.tab_all": "Усе",
-    "props.tab_sale": "Продаж",
-    "props.tab_rent": "Оренда",
-    "props.tab_lux": "Преміум",
-    "props.count_one": "об'єкт",
-    "props.count_many": "об'єктів",
-    "props.clear": "Очистити фільтри",
-    "props.aria_filter": "Фільтр за містом",
-    "props.empty_title_l1": "Поки немає",
-    "props.empty_title_em": "збігів",
-    "props.empty_title_l2": "",
-    "props.empty_desc":
-      "Розкажіть, що шукаєте, і ми сповістимо щойно з'явиться відповідний об'єкт.",
-    "props.empty_cta": "Поговорити з Тетяною",
-    "props.empty_clear": "Дивитись усі",
-    "props.fav_add": "Додати в обране",
-    "props.fav_remove": "Прибрати з обраного",
-    "props.tag_sale": "ПРОДАЖ",
-    "props.tag_rent": "ОРЕНДА",
-    "props.bed": "Кімн.",
-    "props.bath": "С/в",
-    "props.m2": "м² корисні",
-    "principles.title_l1": "Чому саме",
-    "principles.title_em": "ми",
-    "principles.desc":
-      "Три принципи, що тримають кожне рішення, кожен дзвінок, кожен підпис. І четвертий, неписаний, якого ми завжди дотримуємось.",
-    "principles.label": "ПРИНЦИП",
-    "principles.p1_name": "Цікавість",
-    "principles.p1_text":
-      "Досліджуємо кожну деталь та аналізуємо всі можливі альтернативи. Завжди шукаємо найкраще рішення для кожного клієнта.",
-    "principles.p2_name": "Довіра",
-    "principles.p2_text":
-      "Будуємо міцні та довготривалі стосунки. Діємо чесно і послідовно на кожному кроці процесу.",
-    "principles.p3_name": "Постійність",
-    "principles.p3_text":
-      "Супроводжуємо до закриття угоди, не зникаємо коли стає важко. Кожна справа — до кінця.",
-    "process.title_l1": "Як ми",
-    "process.title_em": "працюємо",
-    "process.desc":
-      "Чотири кроки. Одна людина з вами на кожному з них. Без внутрішніх передач, без втрати нитки вашої історії.",
-    "process.s1_title": "Слухаємо",
-    "process.s1_text":
-      "Аналізуємо вашу ситуацію, цілі та контекст, щоб запропонувати рішення під реальні потреби.",
-    "process.s2_title": "Готуємо",
-    "process.s2_text":
-      "Перевіряємо документи, опції та сценарії, щоб уникнути ризиків та передбачити будь-який непередбачуваний момент.",
-    "process.s3_title": "Супроводжуємо",
-    "process.s3_text":
-      "Допомагаємо з переговорами, формальностями і координуємось з агентствами та фахівцями.",
-    "process.s4_title": "Закриваємо",
-    "process.s4_text":
-      "Контролюємо процес до завершення, переконуючись що кожен крок виконано прозоро.",
-    "founder.eyebrow": "Хто з вами · Засновниця",
-    "founder.placeholder": "Портрет засновниці",
-    "founder.quote":
-      "Моя робота — спростити вашу адміністративну рутину через персональну, чесну консультацію. Вірю в силу позитивного підходу та лояльності до цілей тих, хто мені довіряє.",
-    "founder.mission_label": "МІСІЯ",
-    "founder.mission":
-      "Економити час тих, хто довірив свій переїзд до Іспанії.",
-    "founder.vision_label": "БАЧЕННЯ",
-    "founder.vision": "Чесність як стандарт успіху.",
-    "testi.title_l1": "Що",
-    "testi.title_em": "кажуть",
-    "testi.add": "Залишити відгук",
-    "testi.prev": "Попередній",
-    "testi.next": "Наступний",
-    "testi.modal_eyebrow": "Поділіться досвідом",
-    "testi.modal_title_pre": "Залишити",
-    "testi.modal_title_em": "відгук",
-    "testi.modal_sub":
-      "Ваш відгук допомагає тим, хто думає про той самий крок.",
-    "testi.modal_rating": "Оцінка",
-    "testi.modal_rating_err": "Оберіть оцінку",
-    "testi.modal_name": "Ім'я",
-    "testi.modal_name_ph": "Ваше ім'я",
-    "testi.modal_city": "Місто",
-    "testi.modal_services": "Отримані послуги",
-    "testi.modal_review": "Ваш відгук",
-    "testi.modal_review_ph": "Напишіть кілька рядків...",
-    "testi.modal_submit": "Опублікувати",
-    "testi.modal_submitting": "Публікуємо...",
-    "testi.modal_thanks": "Дякуємо.",
-    "testi.modal_thanks_sub": "Перевіряємо кожен відгук перед публікацією.",
-    "testi.close": "Закрити",
-    "contact.title_l1": "Розкажіть",
-    "contact.title_l2_pre": "ваш",
-    "contact.title_em": "план",
-    "contact.atras": "Назад",
-    "contact.siguiente": "Далі",
-    "contact.enviar": "Надіслати",
-    "contact.step0_q_pre": "Чим можемо",
-    "contact.step0_q_em": "допомогти",
-    "contact.step0_q_post": "?",
-    "contact.step0_hint": "Оберіть одну або декілька послуг.",
-    "contact.svc_inmo": "Нерухомість",
-    "contact.svc_extr": "Легалізація",
-    "contact.svc_gest": "Сервіс",
-    "contact.svc_legal": "Юр. консультація",
-    "contact.step1_q_budget_pre": "Ваш",
-    "contact.step1_q_budget_em": "бюджет",
-    "contact.step1_q_budget_post": "та терміни.",
-    "contact.step1_q_only_pre": "Коли",
-    "contact.step1_q_only_em": "хочете",
-    "contact.step1_q_only_post": "розпочати?",
-    "contact.budget_label": "Орієнтовний бюджет",
-    "contact.budget_upto": "До",
-    "contact.budget_more": "Понад €3M",
-    "contact.urgency_label": "Коли хочете розпочати?",
-    "contact.urg_asap": "Якомога швидше",
-    "contact.urg_3m": "Найближчі 3 місяці",
-    "contact.urg_6m": "Найближчі 6 місяців",
-    "contact.urg_explore": "Просто дивлюсь",
-    "contact.step2_q_pre": "Як з вами",
-    "contact.step2_q_em": "зв'язатись",
-    "contact.step2_q_post": "?",
-    "contact.name_label": "Ім'я",
-    "contact.name_ph": "Ваше ім'я",
-    "contact.email_label": "Email",
-    "contact.email_ph": "ви@email.com",
-    "contact.email_err": "Введіть коректний email",
-    "contact.phone_label": "Телефон (опціонально)",
-    "contact.phone_ph": "+380 67 000 00 00",
-    "contact.method_label": "Як з вами зручніше зв'язатись",
-    "contact.m_email": "Email",
-    "contact.m_phone": "Телефон",
-    "contact.m_wa": "WhatsApp",
-    "contact.m_tg": "Telegram",
-    "contact.step3_q_pre": "Щось ще",
-    "contact.step3_q_em": "хочете",
-    "contact.step3_q_post": "додати?",
-    "contact.step3_hint":
-      "Опціонально. Чим більше контексту — тим краще ми підготуємо першу розмову.",
-    "contact.summary": "Резюме",
-    "contact.message_ph": "Ваша ситуація, питання, що завгодно...",
-    "contact.success_l1": "Повідомлення",
-    "contact.success_em": "отримано",
-    "contact.success_sub_pre": "Ми зв'яжемось протягом 24 годин через",
-    "contact.success_sub_to": "на",
-    "contact.success_again": "Надіслати ще",
-    "footer.servicios": "Послуги",
-    "footer.compania": "Компанія",
-    "footer.contacto": "Контакти",
-    "footer.about": "Про нас",
-    "footer.team": "Команда",
-    "footer.cases": "Кейси",
-    "footer.press": "Преса",
-    "footer.tagline":
-      "Експерти з нерухомості, легалізації та сервісу. Спрощуємо ваше життя в Іспанії з 2019.",
-    "footer.address": "Av. de la Estación, 12\nАліканте, Іспанія",
-    "footer.legal": "Конфіденційність · Cookies · Юридична інформація",
-    "cookie.text":
-      "Використовуємо необхідні cookies для роботи сайту та опціональні — щоб розуміти поведінку й покращувати сервіс.",
-    "cookie.accept_all": "Прийняти всі",
-    "cookie.essential": "Тільки необхідні",
-    "common.theme_light": "Світла тема",
-    "common.theme_dark": "Темна тема",
-    "common.skip_to_content": "Перейти до контенту",
-    "common.back_top": "Догори",
-    "common.chat": "Зв'язок через WhatsApp",
-  },
-  ru: {
-    "nav.inicio": "Главная",
-    "nav.propiedades": "Недвижимость",
-    "nav.servicios": "Услуги",
-    "nav.nosotros": "О нас",
-    "nav.testimonios": "Отзывы",
-    "nav.contacto": "Контакты",
-    "nav.cta": "Заказать звонок",
-    "hero.eyebrow_left": "С 2019 года — Аликанте, Испания",
-    "hero.eyebrow_right": "Частная консультация · только по записи",
-    "hero.h1_l1": "Недвижимость",
-    "hero.h1_l2_pre": "и",
-    "hero.h1_l2_em": "полный",
-    "hero.h1_l3": "сервис.",
-    "hero.lede_pre": "Частный консультант, объединяющий",
-    "hero.lede_em": "всё",
-    "hero.lede_post":
-      "что нужно для обустройства в Испании — от поиска и переговоров по идеальному дому до решения каждого юридического вопроса.",
-    "hero.cta_primary": "Смотреть объекты",
-    "hero.cta_secondary": "Поговорить с Татьяной",
-    "services.title_l1": "Наши",
-    "services.title_em": "услуги",
-    "services.desc":
-      "Три направления, охватывающие каждый этап вашего переезда: найти, обустроиться, жить. Всё координирует один человек, без посредников.",
-    "services.s1_title": "Недвижимость",
-    "services.s1_desc":
-      "Мы не просто показываем объекты; ищем, фильтруем и ведём переговоры по идеальному жилью на основе ваших интересов и бюджета.",
-    "services.s2_title": "Легализация",
-    "services.s2_desc":
-      "Убираем бюрократические барьеры, чтобы гарантировать законное и практическое пребывание в Испании с первого дня.",
-    "services.s3_title": "Сервис",
-    "services.s3_desc":
-      "Выступаем переводчиками и управляющими по повседневным вопросам дома, семьи и бизнеса.",
-    "services.aria_consult": "Консультация по",
-    "props.title_l1": "Найди",
-    "props.title_l2_pre": "свой",
-    "props.title_em": "будущий дом",
-    "props.desc":
-      "Каждый объект проходит юридическую и техническую проверку перед публикацией. Никаких сюрпризов при подписании.",
-    "props.tab_all": "Все",
-    "props.tab_sale": "Продажа",
-    "props.tab_rent": "Аренда",
-    "props.tab_lux": "Премиум",
-    "props.count_one": "объект",
-    "props.count_many": "объектов",
-    "props.clear": "Сбросить фильтры",
-    "props.aria_filter": "Фильтр по городу",
-    "props.empty_title_l1": "Пока нет",
-    "props.empty_title_em": "совпадений",
-    "props.empty_title_l2": "",
-    "props.empty_desc":
-      "Расскажите, что ищете — мы сообщим как только появится подходящий объект.",
-    "props.empty_cta": "Поговорить с Татьяной",
-    "props.empty_clear": "Смотреть все",
-    "props.fav_add": "В избранное",
-    "props.fav_remove": "Из избранного",
-    "props.tag_sale": "ПРОДАЖА",
-    "props.tag_rent": "АРЕНДА",
-    "props.bed": "Комн.",
-    "props.bath": "С/у",
-    "props.m2": "м² жилые",
-    "principles.title_l1": "Почему",
-    "principles.title_em": "именно мы",
-    "principles.desc":
-      "Три принципа, на которых держится каждое решение, звонок и подпись. И четвёртый, неписаный, который мы соблюдаем всегда.",
-    "principles.label": "ПРИНЦИП",
-    "principles.p1_name": "Любопытство",
-    "principles.p1_text":
-      "Изучаем каждую деталь и анализируем все возможные варианты. Всегда ищем лучшее решение для каждого клиента.",
-    "principles.p2_name": "Доверие",
-    "principles.p2_text":
-      "Строим прочные и долгосрочные отношения. Действуем честно и последовательно на каждом шаге.",
-    "principles.p3_name": "Постоянство",
-    "principles.p3_text":
-      "Сопровождаем до закрытия сделки, не исчезаем когда становится трудно. Каждое дело — до конца.",
-    "process.title_l1": "Как мы",
-    "process.title_em": "работаем",
-    "process.desc":
-      "Четыре шага. Один человек с вами на каждом из них. Без внутренних передач, без потери нити вашей истории.",
-    "process.s1_title": "Слушаем",
-    "process.s1_text":
-      "Анализируем ваш кейс, цели и контекст, чтобы предложить решение под реальные потребности.",
-    "process.s2_title": "Готовим",
-    "process.s2_text":
-      "Проверяем документы, опции и сценарии, чтобы избежать рисков и предусмотреть любые сюрпризы.",
-    "process.s3_title": "Сопровождаем",
-    "process.s3_text":
-      "Помогаем с переговорами, формальностями и координируемся с агентствами и специалистами.",
-    "process.s4_title": "Закрываем",
-    "process.s4_text":
-      "Контролируем процесс до завершения, чтобы каждый шаг был выполнен прозрачно.",
-    "founder.eyebrow": "Кто с вами · Основательница",
-    "founder.placeholder": "Портрет основателя",
-    "founder.quote":
-      "Моя работа — упростить вашу административную рутину через персональную, честную консультацию. Верю в силу позитивного подхода и лояльности целям тех, кто мне доверяет.",
-    "founder.mission_label": "МИССИЯ",
-    "founder.mission":
-      "Экономить время тех, кто доверил свой переезд в Испанию.",
-    "founder.vision_label": "ВИДЕНИЕ",
-    "founder.vision": "Честность как стандарт успеха.",
-    "testi.title_l1": "Что",
-    "testi.title_em": "говорят",
-    "testi.add": "Оставить отзыв",
-    "testi.prev": "Предыдущий",
-    "testi.next": "Следующий",
-    "testi.modal_eyebrow": "Поделитесь опытом",
-    "testi.modal_title_pre": "Оставить",
-    "testi.modal_title_em": "отзыв",
-    "testi.modal_sub":
-      "Ваш отзыв помогает тем, кто думает о таком же шаге.",
-    "testi.modal_rating": "Оценка",
-    "testi.modal_rating_err": "Выберите оценку",
-    "testi.modal_name": "Имя",
-    "testi.modal_name_ph": "Ваше имя",
-    "testi.modal_city": "Город",
-    "testi.modal_services": "Полученные услуги",
-    "testi.modal_review": "Ваш отзыв",
-    "testi.modal_review_ph": "Напишите несколько строк...",
-    "testi.modal_submit": "Опубликовать",
-    "testi.modal_submitting": "Публикуем...",
-    "testi.modal_thanks": "Спасибо.",
-    "testi.modal_thanks_sub": "Проверяем каждый отзыв перед публикацией.",
-    "testi.close": "Закрыть",
-    "contact.title_l1": "Расскажите",
-    "contact.title_l2_pre": "ваш",
-    "contact.title_em": "план",
-    "contact.atras": "Назад",
-    "contact.siguiente": "Далее",
-    "contact.enviar": "Отправить",
-    "contact.step0_q_pre": "Чем можем",
-    "contact.step0_q_em": "помочь",
-    "contact.step0_q_post": "?",
-    "contact.step0_hint": "Выберите одну или несколько услуг.",
-    "contact.svc_inmo": "Недвижимость",
-    "contact.svc_extr": "Легализация",
-    "contact.svc_gest": "Сервис",
-    "contact.svc_legal": "Юр. консультация",
-    "contact.step1_q_budget_pre": "Ваш",
-    "contact.step1_q_budget_em": "бюджет",
-    "contact.step1_q_budget_post": "и сроки.",
-    "contact.step1_q_only_pre": "Когда",
-    "contact.step1_q_only_em": "хотите",
-    "contact.step1_q_only_post": "начать?",
-    "contact.budget_label": "Ориентировочный бюджет",
-    "contact.budget_upto": "До",
-    "contact.budget_more": "Более €3M",
-    "contact.urgency_label": "Когда хотите начать?",
-    "contact.urg_asap": "Как можно скорее",
-    "contact.urg_3m": "Ближайшие 3 месяца",
-    "contact.urg_6m": "Ближайшие 6 месяцев",
-    "contact.urg_explore": "Просто смотрю",
-    "contact.step2_q_pre": "Как с вами",
-    "contact.step2_q_em": "связаться",
-    "contact.step2_q_post": "?",
-    "contact.name_label": "Имя",
-    "contact.name_ph": "Ваше имя",
-    "contact.email_label": "Email",
-    "contact.email_ph": "вы@email.com",
-    "contact.email_err": "Введите корректный email",
-    "contact.phone_label": "Телефон (опционально)",
-    "contact.phone_ph": "+7 900 000 00 00",
-    "contact.method_label": "Как удобнее связаться",
-    "contact.m_email": "Email",
-    "contact.m_phone": "Телефон",
-    "contact.m_wa": "WhatsApp",
-    "contact.m_tg": "Telegram",
-    "contact.step3_q_pre": "Что-то ещё",
-    "contact.step3_q_em": "хотите",
-    "contact.step3_q_post": "добавить?",
-    "contact.step3_hint":
-      "Опционально. Чем больше контекста — тем лучше подготовим первый звонок.",
-    "contact.summary": "Резюме",
-    "contact.message_ph": "Ваша ситуация, вопросы, что угодно...",
-    "contact.success_l1": "Сообщение",
-    "contact.success_em": "получено",
-    "contact.success_sub_pre": "Свяжемся в течение 24 часов через",
-    "contact.success_sub_to": "на",
-    "contact.success_again": "Отправить ещё",
-    "footer.servicios": "Услуги",
-    "footer.compania": "Компания",
-    "footer.contacto": "Контакты",
-    "footer.about": "О нас",
-    "footer.team": "Команда",
-    "footer.cases": "Кейсы",
-    "footer.press": "Пресса",
-    "footer.tagline":
-      "Эксперты по недвижимости, легализации и сервису. Упрощаем вашу жизнь в Испании с 2019.",
-    "footer.address": "Av. de la Estación, 12\nАликанте, Испания",
-    "footer.legal": "Конфиденциальность · Cookies · Юридическая информация",
-    "cookie.text":
-      "Используем необходимые cookies для работы сайта и опциональные — чтобы понимать поведение и улучшать сервис.",
-    "cookie.accept_all": "Принять все",
-    "cookie.essential": "Только необходимые",
-    "common.theme_light": "Светлая тема",
-    "common.theme_dark": "Тёмная тема",
-    "common.skip_to_content": "Перейти к содержимому",
-    "common.back_top": "Вверх",
-    "common.chat": "Связь через WhatsApp",
-  },
-};
+export type { Lang };
 
 type Ctx = {
   lang: Lang;
   setLang: (l: Lang) => void;
-  t: (key: string) => string;
+  t: TranslateFn;
 };
 
 const LangCtx = createContext<Ctx>({
   lang: "es",
   setLang: () => {},
-  t: (k) => DICT.es[k] ?? k,
+  t: (k) => translate("es", k),
 });
 
-const STORAGE_KEY = "tabodis_lang";
+function writeCookie(lang: Lang) {
+  if (typeof document === "undefined") return;
+  // Path=/ so the cookie is sent for every route. SameSite=Lax is fine for a
+  // user-language preference — no need for HttpOnly because client code reads
+  // it too. Secure is auto-applied by browsers on https origins.
+  document.cookie = `${COOKIE_KEY}=${lang}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+}
 
-export function LangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("es");
+function readCookie(): Lang | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(
+    new RegExp(`(?:^|;\\s*)${COOKIE_KEY}=([^;]+)`),
+  );
+  return match && isLang(match[1]) ? match[1] : null;
+}
 
+export function LangProvider({
+  initialLang = "es",
+  children,
+}: {
+  initialLang?: Lang;
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const [lang, setLangState] = useState<Lang>(initialLang);
+
+  // On mount: reconcile cookie ↔ localStorage in case the user upgraded from
+  // the legacy localStorage-only setup. Cookie is authoritative for SSR.
   useEffect(() => {
+    let resolved: Lang | null = readCookie();
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === "es" || saved === "uk" || saved === "ru") setLangState(saved);
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (!resolved && isLang(stored)) resolved = stored;
+      if (resolved) localStorage.setItem(STORAGE_KEY, resolved);
     } catch {
-      /* ignore */
+      /* ignore quota / privacy mode */
     }
+    if (resolved && resolved !== lang) {
+      setLangState(resolved);
+      writeCookie(resolved);
+    } else if (!readCookie() && resolved) {
+      writeCookie(resolved);
+    }
+    // Run once on mount — `lang` intentionally omitted from deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setLang = (l: Lang) => {
-    setLangState(l);
-    try {
-      localStorage.setItem(STORAGE_KEY, l);
-    } catch {
-      /* ignore */
-    }
-    document.documentElement.lang = l === "uk" ? "uk" : l === "ru" ? "ru" : "es";
-  };
+  const setLang = useCallback(
+    (l: Lang) => {
+      setLangState(l);
+      writeCookie(l);
+      try {
+        localStorage.setItem(STORAGE_KEY, l);
+      } catch {
+        /* ignore */
+      }
+      if (typeof document !== "undefined") {
+        document.documentElement.lang = l;
+      }
+      // Re-render Server Components so they pick up the new cookie value
+      // without a full page reload.
+      router.refresh();
+    },
+    [router],
+  );
 
-  const t = (key: string) => DICT[lang][key] ?? DICT.es[key] ?? key;
+  const t = useMemo<TranslateFn>(() => (key) => translate(lang, key), [lang]);
 
-  return <LangCtx.Provider value={{ lang, setLang, t }}>{children}</LangCtx.Provider>;
+  return (
+    <LangCtx.Provider value={{ lang, setLang, t }}>{children}</LangCtx.Provider>
+  );
 }
 
 export const useLang = () => useContext(LangCtx);
