@@ -15,6 +15,7 @@ import { Reveal } from "@/components/shared/Reveal";
 import { CookieBanner } from "@/components/shared/CookieBanner";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { createServerClient } from "@/lib/supabase/server";
+import { ReviewsRefresher } from "@/components/landing/ReviewsRefresher";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,7 @@ export default async function HomePage() {
       <ScrollProgressAndBackTop />
       <Reveal />
       <CookieBanner />
+      <ReviewsRefresher />
     </LangProvider>
   );
 }

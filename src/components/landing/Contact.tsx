@@ -10,6 +10,7 @@ import {
 } from "@/lib/validations";
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const isValidPhone = (v: string) => !v || /^[+]?[\d\s\-().]{7,20}$/.test(v.trim());
 
 type StepData = {
   services: string[];
@@ -37,6 +38,7 @@ export function Contact() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<StepData>(INITIAL);
   const [emailError, setEmailError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const submitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,6 +59,9 @@ export function Contact() {
     }));
 
   const needsBudget = data.services.includes("Inmobiliaria");
+  const phoneRequired = data.contact_methods.some((m) =>
+    ["Teléfono", "WhatsApp", "Telegram"].includes(m),
+  );
   const steps = [
     { label: "Servicio", valid: data.services.length > 0 },
     {
@@ -65,7 +70,11 @@ export function Contact() {
     },
     {
       label: "Contacto",
-      valid: !!data.name && isValidEmail(data.email) && data.contact_methods.length > 0,
+      valid:
+        !!data.name &&
+        isValidEmail(data.email) &&
+        data.contact_methods.length > 0 &&
+        (!phoneRequired || (!!data.phone && isValidPhone(data.phone))),
     },
     { label: "Mensaje", valid: true },
   ];
@@ -109,6 +118,7 @@ export function Contact() {
     setStep(0);
     setData(INITIAL);
     setEmailError("");
+    setPhoneError("");
     setSubmitError("");
   };
 
@@ -159,6 +169,9 @@ export function Contact() {
                     toggleMethod={(v) => toggleArr("contact_methods", v)}
                     emailError={emailError}
                     setEmailError={setEmailError}
+                    phoneError={phoneError}
+                    setPhoneError={setPhoneError}
+                    phoneRequired={phoneRequired}
                   />
                 )}
                 {step === 3 && (
@@ -207,8 +220,7 @@ export function Contact() {
                 Mensaje <em className="italic text-accent-deep">recibido</em>.
               </h4>
               <p className="text-sm text-ink-soft max-w-[360px]">
-                Te contactaremos en menos de 24h por {data.contact_methods.join(", ")} a{" "}
-                {data.email}.
+                Te contactaremos en la mayor brevedad posible.
               </p>
               <button onClick={reset} className="btn-ghost mt-3">
                 Enviar otro mensaje
@@ -364,12 +376,18 @@ function Step2({
   toggleMethod,
   emailError,
   setEmailError,
+  phoneError,
+  setPhoneError,
+  phoneRequired,
 }: {
   data: StepData;
   update: <K extends keyof StepData>(k: K, v: StepData[K]) => void;
   toggleMethod: (v: string) => void;
   emailError: string;
   setEmailError: (v: string) => void;
+  phoneError: string;
+  setPhoneError: (v: string) => void;
+  phoneRequired: boolean;
 }) {
   return (
     <>
@@ -422,16 +440,33 @@ function Step2({
 
       <div className="flex flex-col gap-2">
         <label className="font-mono text-[10px] tracking-[0.16em] uppercase text-ink-soft">
-          Teléfono (opcional)
+          Teléfono{phoneRequired ? "" : " (opcional)"}
         </label>
         <input
           type="tel"
+          required={phoneRequired}
           value={data.phone}
-          onChange={(e) => update("phone", e.target.value)}
+          onChange={(e) => {
+            update("phone", e.target.value);
+            if (phoneError) setPhoneError("");
+          }}
+          onBlur={(e) =>
+            setPhoneError(
+              e.target.value && !isValidPhone(e.target.value)
+                ? "Introduce un teléfono válido"
+                : phoneRequired && !e.target.value
+                  ? "El teléfono es obligatorio para el método seleccionado"
+                  : "",
+            )
+          }
           placeholder="+34 600 000 000"
-          className="border-0 border-b border-line bg-transparent py-2.5 text-base outline-none focus:border-accent transition-colors"
+          className={[
+            "border-0 border-b bg-transparent py-2.5 text-base outline-none transition-colors",
+            phoneError ? "border-danger" : "border-line focus:border-accent",
+          ].join(" ")}
           style={{ fontSize: 16 }}
         />
+        {phoneError && <span className="field-errmsg">{phoneError}</span>}
       </div>
 
       <div className="flex flex-col gap-2">

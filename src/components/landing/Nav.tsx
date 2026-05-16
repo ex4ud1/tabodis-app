@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Arrow, ArrowDown, Close, Menu, Moon, Sun } from "@/components/icons";
 import { useLang, type Lang } from "@/lib/i18n";
 
@@ -136,35 +137,50 @@ export function Nav() {
               <button
                 onClick={() => setLangOpen(!langOpen)}
                 className={[
-                  "flex items-center gap-1.5 font-mono text-[11px] tracking-[0.12em] px-3.5 py-2 border rounded-full transition-all",
+                  "flex items-center gap-1.5 font-mono text-[11px] tracking-[0.12em] px-3.5 py-2 border rounded-xl transition-all duration-200",
                   langOpen
-                    ? "rounded-b-none border-ink text-ink"
+                    ? "border-ink text-ink bg-paper"
                     : "border-line text-ink-soft hover:text-ink hover:border-ink",
                 ].join(" ")}
               >
-                {current.flag} {current.label} <ArrowDown size={10} />
+                {current.flag} {current.label}{" "}
+                <motion.span
+                  animate={{ rotate: langOpen ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ display: "flex" }}
+                >
+                  <ArrowDown size={10} />
+                </motion.span>
               </button>
-              {langOpen && (
-                <div className="absolute top-full inset-x-0 bg-paper border border-t-0 border-ink rounded-b-2xl p-1.5 shadow-[0_12px_30px_-10px_rgba(28,39,71,0.18)] z-[60] flex flex-col gap-0.5">
-                  {LANGS.map((l) => (
-                    <button
-                      key={l.code}
-                      onClick={() => {
-                        setLang(l.code);
-                        setLangOpen(false);
-                      }}
-                      className={[
-                        "px-2 py-1.5 rounded-lg font-mono text-[11px] tracking-[0.12em] transition-all text-center",
-                        l.code === lang
-                          ? "text-ink bg-accent/20"
-                          : "text-ink-soft hover:bg-ink/5 hover:text-ink",
-                      ].join(" ")}
-                    >
-                      {l.flag} {l.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <AnimatePresence>
+                {langOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                    transition={{ duration: 0.18, ease: [0.2, 0, 0, 1] }}
+                    className="absolute top-full mt-1.5 inset-x-0 bg-paper border border-ink rounded-xl p-1.5 shadow-[0_12px_30px_-10px_rgba(28,39,71,0.18)] z-[60] flex flex-col gap-0.5 origin-top"
+                  >
+                    {LANGS.map((l) => (
+                      <button
+                        key={l.code}
+                        onClick={() => {
+                          setLang(l.code);
+                          setLangOpen(false);
+                        }}
+                        className={[
+                          "px-2 py-1.5 rounded-lg font-mono text-[11px] tracking-[0.12em] transition-all text-center",
+                          l.code === lang
+                            ? "text-ink bg-accent/20"
+                            : "text-ink-soft hover:bg-ink/5 hover:text-ink",
+                        ].join(" ")}
+                      >
+                        {l.flag} {l.label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <a

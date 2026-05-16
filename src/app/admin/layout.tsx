@@ -3,15 +3,9 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { signOut } from "@/app/login/actions";
+import { AdminNav } from "@/components/admin/AdminNav";
 
 export const dynamic = "force-dynamic";
-
-const NAV = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/properties", label: "Propiedades" },
-  { href: "/admin/leads", label: "Leads" },
-  { href: "/admin/reviews", label: "Reseñas" },
-];
 
 const WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
 const OWNERS = (process.env.OWNERS ?? "tatanuk@gmail.com,zadorbus@gmail.com")
@@ -79,17 +73,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           >
             Tabo<em className="italic text-accent">·</em>dis <span className="font-mono text-[10px] tracking-widest uppercase text-ink-soft ml-2">admin</span>
           </Link>
-          <nav className="flex items-center gap-1 flex-wrap">
-            {NAV.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="px-3 py-1.5 rounded-full text-[13px] text-ink-soft hover:text-ink hover:bg-bg-2 transition-colors"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
+          <AdminNav />
           <form action={signOut} className="flex items-center gap-3">
             <span className="font-mono text-[11px] tracking-widest uppercase text-ink-soft hidden sm:inline">
               {user.email}

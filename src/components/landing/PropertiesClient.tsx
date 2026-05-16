@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Arrow, Heart, HouseSearch, Pin } from "@/components/icons";
+import { useState } from "react";
+import { Arrow, HouseSearch, Pin } from "@/components/icons";
 import { formatPrice } from "@/lib/utils";
 
 export type PropertyItem = {
@@ -155,32 +155,6 @@ export function PropertiesClient({
 }
 
 function PropCard({ p, isFeatured }: { p: PropertyItem; isFeatured: boolean }) {
-  const [fav, setFav] = useState(false);
-
-  // SSR-safe localStorage read
-  useEffect(() => {
-    try {
-      const favs = JSON.parse(localStorage.getItem("tabodis_favs") || "[]") as string[];
-      setFav(favs.includes(p.slug));
-    } catch {
-      /* ignore */
-    }
-  }, [p.slug]);
-
-  const toggleFav = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const next = !fav;
-    setFav(next);
-    try {
-      const favs = JSON.parse(localStorage.getItem("tabodis_favs") || "[]") as string[];
-      const updated = next ? [...new Set([...favs, p.slug])] : favs.filter((x) => x !== p.slug);
-      localStorage.setItem("tabodis_favs", JSON.stringify(updated));
-    } catch {
-      /* ignore */
-    }
-  };
-
   const tag = p.type === "alquiler" ? "ALQUILER" : "EN VENTA";
 
   return (
@@ -223,16 +197,6 @@ function PropCard({ p, isFeatured }: { p: PropertyItem; isFeatured: boolean }) {
         >
           {tag}
         </span>
-        <button
-          onClick={toggleFav}
-          aria-label={fav ? "Quitar de favoritos" : "Añadir a favoritos"}
-          className={[
-            "absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center transition-all",
-            fav ? "bg-accent text-white" : "bg-paper text-ink hover:bg-accent hover:text-white",
-          ].join(" ")}
-        >
-          <Heart size={14} filled={fav} />
-        </button>
       </div>
       <div className="p-5 pb-6 flex flex-col gap-2.5 flex-1">
         <span className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-ink-soft">

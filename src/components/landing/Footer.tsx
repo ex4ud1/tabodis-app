@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useLang } from "@/lib/i18n";
 
 export function Footer() {
@@ -108,6 +109,12 @@ export function Footer() {
           <p className="font-mono text-[11px] tracking-widest uppercase text-paper/50">
             Privacidad · Cookies · Aviso legal
           </p>
+          <Link
+            href="/login"
+            className="font-mono text-[10px] tracking-widest uppercase text-paper/20 hover:text-paper/50 transition-colors"
+          >
+            Acceso administración
+          </Link>
         </div>
       </div>
     </footer>
