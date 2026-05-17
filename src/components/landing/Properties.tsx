@@ -92,6 +92,10 @@ async function fetchProperties(): Promise<PropertyItem[]> {
 
 export async function Properties() {
   const items = await fetchProperties();
-  const availableCities = CITIES_BY_POPULARITY.filter((c) => items.some((p) => p.city === c));
+  const popularSet = new Set(CITIES_BY_POPULARITY);
+  const presentCities = new Set(items.map((p) => p.city).filter((c): c is string => !!c));
+  const popularInOrder = CITIES_BY_POPULARITY.filter((c) => presentCities.has(c));
+  const extras = [...presentCities].filter((c) => !popularSet.has(c)).sort();
+  const availableCities = [...popularInOrder, ...extras];
   return <PropertiesClient items={items} cities={availableCities} />;
 }

@@ -3,7 +3,7 @@ import { HeroCTA } from "./HeroCTA";
 
 export function Hero({ t }: { t: TranslateFn }) {
   return (
-    <section className="hero wrap pt-20 pb-10 md:pt-24" id="inicio">
+    <section className="hero wrap pt-10 pb-10 md:pt-14" id="inicio">
       <div className="hero-meta grid grid-cols-1 md:grid-cols-2 items-end gap-10 pb-8 border-b border-line">
         <div className="flex flex-col gap-2">
           <span className="eyebrow">{t("hero.eyebrow_left")}</span>

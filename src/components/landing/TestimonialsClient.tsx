@@ -104,17 +104,17 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
   };
 
   return (
-    <section className="section wrap py-24" id="testimonios">
-      <div className="bg-ink text-paper rounded-[32px] p-9 md:p-20 relative overflow-hidden">
+    <section className="section wrap py-16" id="testimonios">
+      <div className="bg-ink text-paper rounded-[32px] p-7 md:p-14 relative overflow-hidden">
         <span
           aria-hidden="true"
-          className="absolute -top-10 -right-7 md:-top-14 md:-right-10 font-serif leading-none text-[180px] md:text-[260px] pointer-events-none"
+          className="absolute -top-8 -right-6 md:-top-12 md:-right-8 font-serif leading-none text-[150px] md:text-[220px] pointer-events-none"
           style={{ color: "rgba(230, 150, 100, 0.18)" }}
         >
           &ldquo;
         </span>
-        <div className="flex justify-between items-end mb-14 gap-6 relative z-[2] flex-wrap">
-          <h3 className="font-serif text-[clamp(40px,5vw,72px)] leading-[0.95] tracking-tight max-w-[12ch]">
+        <div className="flex justify-between items-end mb-10 gap-6 relative z-[2] flex-wrap">
+          <h3 className="font-serif text-[clamp(32px,4vw,56px)] leading-[0.95] tracking-tight max-w-[12ch]">
             {t("testi.title_l1")} <em className="italic text-accent">{t("testi.title_em")}</em>
           </h3>
           <div className="flex gap-3 items-center">
@@ -129,16 +129,16 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
               <button
                 onClick={() => goTo((idx - 1 + items.length) % items.length)}
                 aria-label={t("testi.prev")}
-                className="w-12 h-12 rounded-full border border-paper/30 hover:bg-accent hover:border-accent transition-all flex items-center justify-center"
+                className="w-11 h-11 rounded-full border border-paper/30 hover:bg-accent hover:border-accent transition-all flex items-center justify-center"
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={16} />
               </button>
               <button
                 onClick={() => goTo((idx + 1) % items.length)}
                 aria-label={t("testi.next")}
-                className="w-12 h-12 rounded-full border border-paper/30 hover:bg-accent hover:border-accent transition-all flex items-center justify-center"
+                className="w-11 h-11 rounded-full border border-paper/30 hover:bg-accent hover:border-accent transition-all flex items-center justify-center"
               >
-                <Arrow size={18} />
+                <Arrow size={16} />
               </button>
             </div>
           </div>
@@ -151,7 +151,7 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
           ].join(" ")}
         >
           <div
-            className="flex gap-1 mb-6 text-lg"
+            className="flex gap-1 mb-5 text-base"
             aria-label={`${c.rating} / 5`}
           >
             {[1, 2, 3, 4, 5].map((n) => (
@@ -160,7 +160,7 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
               </span>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2 mb-8">
+          <div className="flex flex-wrap gap-2 mb-6">
             {c.services.map((s) => (
               <span
                 key={s}
@@ -171,11 +171,11 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
               </span>
             ))}
           </div>
-          <p className="font-serif text-[clamp(22px,2.4vw,36px)] leading-[1.3] max-w-[36ch] mb-10 text-pretty">
+          <p className="font-serif text-[clamp(20px,2vw,28px)] leading-[1.35] max-w-[40ch] mb-8 text-pretty">
             &ldquo;{c.quote}&rdquo;
           </p>
-          <div className="flex items-center gap-5 pt-8 border-t border-paper/20 flex-wrap">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent to-accent-deep text-white flex items-center justify-center font-serif text-[22px]">
+          <div className="flex items-center gap-5 pt-6 border-t border-paper/20 flex-wrap">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent-deep text-white flex items-center justify-center font-serif text-[20px]">
               {c.initial}
             </div>
             <div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PhotoUploader } from "./PhotoUploader";
 import { DeletePropertyButton } from "./DeletePropertyButton";
 import { CityCombobox } from "@/components/shared/CityCombobox";
+import { AddressCombobox } from "@/components/shared/AddressCombobox";
 import { PropertyMap } from "@/components/shared/PropertyMap";
 import {
   AMENITIES_OPTIONS,
@@ -54,6 +55,7 @@ export function PropertyForm({
   const i = initial ?? {};
 
   const [city, setCity] = useState<string>(i.city ?? "");
+  const [loc, setLoc] = useState<string>(i.loc ?? "");
   const [lat, setLat] = useState<number | null>(i.lat ?? null);
   const [lng, setLng] = useState<number | null>(i.lng ?? null);
   const [radius, setRadius] = useState<number>(i.location_radius_m ?? 300);
@@ -169,9 +171,29 @@ export function PropertyForm({
                 placeholder="Empieza a escribir una ciudad…"
               />
             </div>
-            <Field name="loc" label="Zona / barrio" defaultValue={i.loc ?? ""} />
+            <label className="flex flex-col gap-1.5">
+              <FieldLabel>Zona / barrio</FieldLabel>
+              <input
+                name="loc"
+                type="text"
+                value={loc}
+                onChange={(e) => setLoc(e.target.value)}
+                className="border-0 border-b border-line bg-transparent py-2 text-base outline-none focus:border-accent transition-colors"
+                style={{ fontSize: 16 }}
+              />
+            </label>
           </div>
-          <Field name="address" label="Dirección (opcional, no se muestra al público)" defaultValue={i.address ?? ""} />
+          <AddressCombobox
+            name="address"
+            label="Dirección (opcional, no se muestra al público)"
+            initialAddress={i.address ?? ""}
+            onSelect={(s) => {
+              if (s.city) setCity(s.city);
+              if (s.district) setLoc(s.district);
+              setLat(s.lat);
+              setLng(s.lng);
+            }}
+          />
 
           <div className="flex flex-col gap-2">
             <FieldLabel>Mapa (haz clic para fijar el punto exacto)</FieldLabel>

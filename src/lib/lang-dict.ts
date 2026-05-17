@@ -239,6 +239,9 @@ export const DICT: Record<Lang, Record<string, string>> = {
       "Expertos en inmobiliaria, extranjería y gestión. Facilitamos tu vida en España desde 2019.",
     "footer.address": "Av. de la Estación, 12\nAlicante, ES",
     "footer.legal": "Privacidad · Cookies · Aviso legal",
+    "footer.legal_privacy": "Privacidad",
+    "footer.legal_cookies": "Cookies",
+    "footer.legal_notice": "Aviso legal",
     // Cookie banner
     "cookie.aria_label": "Aviso de cookies",
     "cookie.text":
@@ -475,6 +478,9 @@ export const DICT: Record<Lang, Record<string, string>> = {
       "Експерти з нерухомості, легалізації та сервісу. Спрощуємо ваше життя в Іспанії з 2019.",
     "footer.address": "Av. de la Estación, 12\nАліканте, Іспанія",
     "footer.legal": "Конфіденційність · Cookies · Юридична інформація",
+    "footer.legal_privacy": "Конфіденційність",
+    "footer.legal_cookies": "Cookies",
+    "footer.legal_notice": "Юридична інформація",
     "cookie.aria_label": "Повідомлення про cookies",
     "cookie.text":
       "Використовуємо необхідні cookies для роботи сайту та опціональні — щоб розуміти поведінку й покращувати сервіс. Можна прийняти всі або лише необхідні.",
@@ -709,6 +715,9 @@ export const DICT: Record<Lang, Record<string, string>> = {
       "Эксперты по недвижимости, легализации и сервису. Упрощаем вашу жизнь в Испании с 2019.",
     "footer.address": "Av. de la Estación, 12\nАликанте, Испания",
     "footer.legal": "Конфиденциальность · Cookies · Юридическая информация",
+    "footer.legal_privacy": "Конфиденциальность",
+    "footer.legal_cookies": "Cookies",
+    "footer.legal_notice": "Юридическая информация",
     "cookie.aria_label": "Уведомление о cookies",
     "cookie.text":
       "Используем необходимые cookies для работы сайта и опциональные — чтобы понимать поведение и улучшать сервис. Можно принять все или только необходимые.",

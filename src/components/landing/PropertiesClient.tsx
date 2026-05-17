@@ -75,7 +75,14 @@ export function PropertiesClient({
     setTab("all");
     setCityFilter([]);
   };
-  const tabs: TabKey[] = ["all", "sale", "rent"];
+  const hasSale = items.some((p) => p.type === "venta");
+  const hasRent = items.some((p) => p.type === "alquiler");
+  const tabs: TabKey[] = [
+    "all",
+    ...(hasSale ? (["sale"] as const) : []),
+    ...(hasRent ? (["rent"] as const) : []),
+  ];
+  const showTabs = items.length > 0 && tabs.length > 1;
 
   const openProperty = (slug: string) => {
     const sp = new URLSearchParams(window.location.search);
@@ -95,20 +102,22 @@ export function PropertiesClient({
           <p className="text-[17px] leading-[1.5] text-ink-soft max-w-[440px] mb-6">
             {t("props.desc")}
           </p>
-          <div className="inline-flex gap-1 bg-paper p-1.5 rounded-full border border-line-soft">
-            {tabs.map((k) => (
-              <button
-                key={k}
-                onClick={() => setTab(k)}
-                className={[
-                  "px-5 py-2.5 rounded-full text-[13px] font-medium transition-all duration-200",
-                  k === tab ? "bg-ink text-paper" : "text-ink-soft hover:text-ink",
-                ].join(" ")}
-              >
-                {t(TAB_LABEL_KEY[k])}
-              </button>
-            ))}
-          </div>
+          {showTabs && (
+            <div className="inline-flex gap-1 bg-paper p-1.5 rounded-full border border-line-soft">
+              {tabs.map((k) => (
+                <button
+                  key={k}
+                  onClick={() => setTab(k)}
+                  className={[
+                    "px-5 py-2.5 rounded-full text-[13px] font-medium transition-all duration-200",
+                    k === tab ? "bg-ink text-paper" : "text-ink-soft hover:text-ink",
+                  ].join(" ")}
+                >
+                  {t(TAB_LABEL_KEY[k])}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

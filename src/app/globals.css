@@ -405,4 +405,88 @@
       transform: translate(-50%, -50%) scale(1);
     }
   }
+
+  .legal-prose {
+    color: var(--ink);
+  }
+  .legal-prose h1 {
+    font-family: var(--font-serif, "Cormorant Garamond", serif);
+    font-size: clamp(40px, 5vw, 64px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.6em;
+  }
+  .legal-prose .legal-meta {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 3rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .legal-prose h2 {
+    font-family: var(--font-serif, "Cormorant Garamond", serif);
+    font-size: clamp(22px, 2.4vw, 28px);
+    line-height: 1.15;
+    margin-top: 2.5rem;
+    margin-bottom: 0.8rem;
+    letter-spacing: -0.01em;
+  }
+  .legal-prose h3 {
+    font-family: var(--font-serif, "Cormorant Garamond", serif);
+    font-size: 19px;
+    line-height: 1.2;
+    margin-top: 1.6rem;
+    margin-bottom: 0.5rem;
+  }
+  .legal-prose p {
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    margin-bottom: 1rem;
+  }
+  .legal-prose ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+    margin-bottom: 1rem;
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .legal-prose ul li {
+    margin-bottom: 0.35rem;
+  }
+  .legal-prose a {
+    color: var(--accent-deep);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .legal-prose strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .legal-prose .legal-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 14px;
+  }
+  .legal-prose .legal-table th,
+  .legal-prose .legal-table td {
+    text-align: left;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    color: var(--ink);
+  }
+  .legal-prose .legal-table th {
+    background: var(--bg-2);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
 }

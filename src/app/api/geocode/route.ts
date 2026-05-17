@@ -1,43 +1,66 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 
-// Proxies OSM Nominatim city search.
-// - Attaches the User-Agent that Nominatim's usage policy requires.
-// - Restricts results to Spain (country=es) by default.
-// - Caches responses for 1 hour to stay friendly to the free tier.
-// - Rate-limits per client IP because Nominatim caps free use at ~1 req/sec.
-//
-// Why server-side: calling Nominatim from the browser leaks a generic UA and
-// gives no way to throttle abusive clients. The browser also hits CORS issues
-// for some Nominatim regional mirrors.
+// Proxies the Photon geocoder (https://photon.komoot.io/api).
+// - Free, no API key required, built specifically for typeahead.
+// - Two modes: ?mode=city (default, backwards-compatible with CityCombobox)
+//   and ?mode=address (returns full street/house/district details).
+// - Spanish-first: language=es, biased toward Costa Blanca where most
+//   listings live.
+// - Rate-limits per client IP — Photon is a free public service, we should
+//   not hammer it from a single deployment.
 
 export const runtime = "nodejs";
 
-const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+const PHOTON_URL = "https://photon.komoot.io/api";
 const USER_AGENT =
-  process.env.NOMINATIM_USER_AGENT ??
+  process.env.PHOTON_USER_AGENT ??
   "TaboDis/1.0 (https://tabodis.com; contacto@tabodis.com)";
 
-type NominatimRow = {
-  place_id: number;
-  display_name: string;
-  lat: string;
-  lon: string;
-  type?: string;
-  class?: string;
-  address?: {
+// Costa Blanca / Alicante — biases typeahead toward the region the agency
+// actually operates in, so "Calp" finds the village rather than a random match.
+const BIAS_LAT = "38.345";
+const BIAS_LON = "-0.481";
+
+const CITY_OSM_VALUES = new Set([
+  "city",
+  "town",
+  "village",
+  "municipality",
+  "hamlet",
+  "locality",
+  "suburb",
+]);
+
+type Mode = "city" | "address";
+
+type PhotonFeature = {
+  geometry: { coordinates: [number, number] };
+  properties: {
+    osm_id?: number;
+    osm_key?: string;
+    osm_value?: string;
+    name?: string;
+    street?: string;
+    housenumber?: string;
+    postcode?: string;
     city?: string;
-    town?: string;
-    village?: string;
-    municipality?: string;
+    district?: string;
+    locality?: string;
+    suburb?: string;
+    neighbourhood?: string;
+    county?: string;
     state?: string;
-    province?: string;
     country?: string;
-    country_code?: string;
+    countrycode?: string;
   };
 };
 
-type Suggestion = {
+type PhotonResponse = {
+  features?: PhotonFeature[];
+};
+
+type CitySuggestion = {
   id: number;
   label: string;
   city: string;
@@ -47,16 +70,57 @@ type Suggestion = {
   lng: number;
 };
 
-function pickCityName(row: NominatimRow): string {
-  const a = row.address ?? {};
-  return a.city ?? a.town ?? a.village ?? a.municipality ?? row.display_name.split(",")[0].trim();
+type AddressSuggestion = {
+  id: number;
+  label: string;
+  street: string | null;
+  housenumber: string | null;
+  district: string | null;
+  city: string | null;
+  postcode: string | null;
+  region: string | null;
+  country: string | null;
+  lat: number;
+  lng: number;
+};
+
+function parseMode(raw: string | null): Mode {
+  return raw === "address" ? "address" : "city";
+}
+
+function featureCity(f: PhotonFeature): string | null {
+  const p = f.properties;
+  return p.city ?? p.locality ?? p.name ?? null;
+}
+
+function featureDistrict(f: PhotonFeature): string | null {
+  const p = f.properties;
+  return p.district ?? p.neighbourhood ?? p.suburb ?? null;
+}
+
+function buildAddressLabel(f: PhotonFeature): string {
+  const p = f.properties;
+  const head =
+    p.street && p.housenumber
+      ? `${p.street}, ${p.housenumber}`
+      : p.street ?? p.name ?? "";
+  const tail = [p.postcode, p.city ?? p.locality, p.state, p.country]
+    .filter(Boolean)
+    .join(", ");
+  return [head, tail].filter(Boolean).join(" — ");
+}
+
+function buildCityLabel(f: PhotonFeature): string {
+  const p = f.properties;
+  return [p.name ?? p.city ?? p.locality, p.state, p.country].filter(Boolean).join(", ");
 }
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const q = (url.searchParams.get("q") ?? "").trim();
+  const mode = parseMode(url.searchParams.get("mode"));
   if (q.length < 2) {
-    return NextResponse.json({ suggestions: [] satisfies Suggestion[] });
+    return NextResponse.json({ suggestions: [] });
   }
   // Length cap to keep URL/processing bounded.
   if (q.length > 80) {
@@ -72,15 +136,15 @@ export async function GET(request: Request) {
     );
   }
 
-  const country = (url.searchParams.get("country") ?? "es").slice(0, 2);
-
-  const upstream = new URL(NOMINATIM_URL);
-  upstream.searchParams.set("format", "jsonv2");
-  upstream.searchParams.set("addressdetails", "1");
-  upstream.searchParams.set("limit", "6");
-  upstream.searchParams.set("countrycodes", country);
-  upstream.searchParams.set("featuretype", "city");
+  const upstream = new URL(PHOTON_URL);
   upstream.searchParams.set("q", q);
+  upstream.searchParams.set("lang", "es");
+  upstream.searchParams.set("limit", mode === "address" ? "8" : "6");
+  upstream.searchParams.set("lat", BIAS_LAT);
+  upstream.searchParams.set("lon", BIAS_LON);
+  // City mode: restrict to populated places (osm_key=place). Address mode
+  // intentionally leaves it open so streets/houses come through.
+  if (mode === "city") upstream.searchParams.set("osm_tag", "place");
 
   try {
     const res = await fetch(upstream, {
@@ -88,7 +152,7 @@ export async function GET(request: Request) {
         "User-Agent": USER_AGENT,
         "Accept-Language": "es,en",
       },
-      // Edge cache for 1 h; reduces hits on Nominatim and speeds the UX.
+      // Edge cache for 1 h; reduces hits on Photon and speeds the UX.
       next: { revalidate: 3600 },
     });
     if (!res.ok) {
@@ -97,37 +161,55 @@ export async function GET(request: Request) {
         { status: 502 },
       );
     }
-    const rows = (await res.json()) as NominatimRow[];
-    const seen = new Set<string>();
-    const suggestions: Suggestion[] = [];
-    for (const r of rows) {
-      const cls = r.class ?? "";
-      const typ = r.type ?? "";
-      // Keep populated places only — drop "way", "tourism", etc. that pollute
-      // typeahead with non-city matches.
-      const isPlace =
-        cls === "place" && ["city", "town", "village", "municipality", "hamlet"].includes(typ);
-      const isAdmin = cls === "boundary" && typ === "administrative";
-      if (!isPlace && !isAdmin) continue;
+    const data = (await res.json()) as PhotonResponse;
+    const features = data.features ?? [];
 
-      const city = pickCityName(r);
+    if (mode === "address") {
+      const suggestions: AddressSuggestion[] = [];
+      let i = 0;
+      for (const f of features) {
+        const p = f.properties;
+        const [lng, lat] = f.geometry.coordinates;
+        suggestions.push({
+          id: p.osm_id ?? i++,
+          label: buildAddressLabel(f),
+          street: p.street ?? null,
+          housenumber: p.housenumber ?? null,
+          district: featureDistrict(f),
+          city: featureCity(f),
+          postcode: p.postcode ?? null,
+          region: p.state ?? p.county ?? null,
+          country: p.country ?? null,
+          lat,
+          lng,
+        });
+        if (suggestions.length >= 8) break;
+      }
+      return NextResponse.json({ suggestions });
+    }
+
+    const seen = new Set<string>();
+    const suggestions: CitySuggestion[] = [];
+    let i = 0;
+    for (const f of features) {
+      const p = f.properties;
+      // Photon's osm_tag=place still occasionally returns boundary-style
+      // entries; trim by osm_value to keep populated places only.
+      if (p.osm_value && !CITY_OSM_VALUES.has(p.osm_value)) continue;
+      const city = featureCity(f);
       if (!city) continue;
-      const key = `${city}|${r.address?.state ?? ""}`;
+      const key = `${city}|${p.state ?? ""}`;
       if (seen.has(key)) continue;
       seen.add(key);
-
-      const region = r.address?.state ?? r.address?.province ?? null;
-      const country = r.address?.country ?? null;
-      const label = [city, region, country].filter(Boolean).join(", ");
-
+      const [lng, lat] = f.geometry.coordinates;
       suggestions.push({
-        id: r.place_id,
-        label,
+        id: p.osm_id ?? i++,
+        label: buildCityLabel(f),
         city,
-        region,
-        country,
-        lat: Number(r.lat),
-        lng: Number(r.lon),
+        region: p.state ?? p.county ?? null,
+        country: p.country ?? null,
+        lat,
+        lng,
       });
       if (suggestions.length >= 6) break;
     }

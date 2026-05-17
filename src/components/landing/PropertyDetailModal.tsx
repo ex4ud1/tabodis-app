@@ -120,18 +120,18 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-paper text-ink rounded-[24px] w-full max-w-[1080px] max-h-[92vh] overflow-y-auto relative shadow-[0_40px_120px_-40px_rgba(28,39,71,0.55)]"
+        className="relative bg-paper text-ink rounded-[24px] w-full max-w-[1080px] max-h-[92vh] shadow-[0_40px_120px_-40px_rgba(28,39,71,0.55)]"
         style={{ animation: "slide-up 0.35s cubic-bezier(0.2,0.8,0.2,1)" }}
       >
         <button
           onClick={close}
           aria-label={t("props.detail_close")}
-          className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-paper/95 border border-line text-ink hover:bg-ink hover:text-paper transition-all inline-flex items-center justify-center"
+          className="absolute top-4 right-4 z-20 w-11 h-11 rounded-full bg-paper/95 border border-line text-ink hover:bg-ink hover:text-paper transition-all inline-flex items-center justify-center shadow-[0_8px_24px_-8px_rgba(28,39,71,0.35)]"
         >
           <Close />
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
+        <div className="overflow-y-auto max-h-[92vh] rounded-[24px] grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
           {/* ── Photo gallery ─────────────────────────────────────────── */}
           <div className="bg-bg-2 relative">
             <div className="relative aspect-[4/3] lg:aspect-auto lg:min-h-[420px]">

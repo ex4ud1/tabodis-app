@@ -80,7 +80,26 @@ export function Footer() {
             © {year} Tabodispain S.L.
           </p>
           <p className="font-mono text-[11px] tracking-widest uppercase text-paper/50">
-            {t("footer.legal")}
+            <Link
+              href="/legal/privacidad"
+              className="hover:text-paper transition-colors"
+            >
+              {t("footer.legal_privacy")}
+            </Link>
+            <span aria-hidden="true">{" · "}</span>
+            <Link
+              href="/legal/cookies"
+              className="hover:text-paper transition-colors"
+            >
+              {t("footer.legal_cookies")}
+            </Link>
+            <span aria-hidden="true">{" · "}</span>
+            <Link
+              href="/legal/aviso-legal"
+              className="hover:text-paper transition-colors"
+            >
+              {t("footer.legal_notice")}
+            </Link>
           </p>
           <Link
             href="/login"
