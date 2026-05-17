@@ -126,12 +126,12 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
       aria-modal="true"
       aria-labelledby="property-detail-title"
       onClick={close}
-      className="fixed inset-0 z-[70] bg-ink/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-8"
+      className="fixed inset-0 z-[70] bg-ink/60 backdrop-blur-sm flex items-center justify-center p-3 md:p-8"
       style={{ animation: "fade-in 0.25s ease" }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-paper text-ink rounded-[24px] w-full max-w-[1080px] max-h-[92dvh] shadow-[0_40px_120px_-40px_rgba(28,39,71,0.55)]"
+        className="relative bg-paper text-ink rounded-[24px] w-full max-w-[1080px] max-h-[92dvh] overflow-hidden shadow-[0_40px_120px_-40px_rgba(28,39,71,0.55)]"
         style={{ animation: "slide-up 0.35s cubic-bezier(0.2,0.8,0.2,1)" }}
       >
         <button
@@ -142,7 +142,7 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
           <Close />
         </button>
 
-        <div className="overflow-y-auto max-h-[92dvh] rounded-[24px] grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
+        <div className="overflow-y-auto rounded-[24px] grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
           {/* ── Photo gallery ─────────────────────────────────────────── */}
           <div className="bg-bg-2 relative">
             <div className="relative aspect-[4/3] lg:aspect-auto lg:min-h-[420px]">
