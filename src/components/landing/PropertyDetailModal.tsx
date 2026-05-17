@@ -134,7 +134,7 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
         aria-modal="true"
         aria-labelledby="property-detail-title"
         onClick={close}
-        className="fixed inset-0 z-[70] bg-ink/60 backdrop-blur-2xl flex items-center justify-center p-3 md:p-8"
+        className="fixed inset-0 z-[70] bg-ink/60 backdrop-blur-xl flex items-center justify-center p-3 md:p-8"
         style={{ animation: "fade-in 0.25s ease" }}
       >
         <div
