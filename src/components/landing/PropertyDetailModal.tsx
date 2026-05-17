@@ -58,10 +58,17 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
     });
   }, [router, searchParams]);
 
-  // Keyboard nav. The modal itself is non-blocking and does NOT lock body
-  // scroll — only the lightbox does (separate effect below).
+  // Body scroll lock + keyboard nav while the modal is open. ESC closes the
+  // lightbox first if it's up, otherwise the modal.
   useEffect(() => {
     if (!open || !item) return;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (lightboxOpen) setLightboxOpen(false);
@@ -73,24 +80,12 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
       }
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, item, close, lightboxOpen]);
-
-  // Lock body scroll ONLY while the photo lightbox is open.
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    const prevOverflow = document.body.style.overflow;
-    const prevPaddingRight = document.body.style.paddingRight;
-    document.body.style.overflow = "hidden";
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-    }
     return () => {
       document.body.style.overflow = prevOverflow;
       document.body.style.paddingRight = prevPaddingRight;
+      document.removeEventListener("keydown", onKey);
     };
-  }, [lightboxOpen]);
+  }, [open, item, close, lightboxOpen]);
 
   if (!open || !item) return null;
 
@@ -132,18 +127,20 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
 
   return (
     <>
-      {/* Non-blocking floating card: wrapper is transparent and ignores
-          pointer events so nav + page beneath stay visible and interactive. */}
+      {/* Blocking blur backdrop: glassmorphism covers everything behind
+          (including the nav at z-50). Click outside the card closes. */}
       <div
         role="dialog"
-        aria-modal="false"
+        aria-modal="true"
         aria-labelledby="property-detail-title"
-        className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none md:p-8"
+        onClick={close}
+        className="fixed inset-0 z-[70] bg-ink/35 backdrop-blur-xl flex items-center justify-center p-3 md:p-8"
         style={{ animation: "fade-in 0.25s ease" }}
       >
         <div
-          className="pointer-events-auto relative bg-paper text-ink w-screen h-[100dvh] max-w-none max-h-none overflow-hidden md:w-full md:max-w-[1080px] md:h-auto md:max-h-[85vh] md:rounded-[24px] md:ring-1 md:ring-line/60 md:shadow-[0_40px_120px_-40px_rgba(28,39,71,0.55)]"
-          style={{ animation: "slide-up 0.35s cubic-bezier(0.2,0.8,0.2,1)" }}
+          onClick={(e) => e.stopPropagation()}
+          className="relative bg-paper text-ink w-screen h-[100dvh] max-w-none max-h-none overflow-hidden md:w-full md:max-w-[1080px] md:h-auto md:max-h-[85vh] md:rounded-[24px] md:ring-1 md:ring-line/60 shadow-[0_60px_180px_-40px_rgba(28,39,71,0.6)]"
+          style={{ animation: "modal-pop 0.42s cubic-bezier(0.2,0.9,0.3,1.15) both" }}
         >
           <button
             onClick={close}
