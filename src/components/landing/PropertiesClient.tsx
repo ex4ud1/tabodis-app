@@ -124,7 +124,7 @@ export function PropertiesClient({
 
       {cities.length > 0 && (
         <div className="flex items-center flex-wrap gap-x-6 gap-y-4 mb-8 pt-2">
-          <div className="flex flex-wrap gap-1.5 flex-1">
+          <div className="flex gap-1.5 flex-1 min-w-0 overflow-x-auto pb-2 md:flex-wrap md:pb-0">
             {cities.map((c) => {
               const on = cityFilter.includes(c);
               return (
@@ -248,7 +248,7 @@ function PropCard({
       <div
         className={[
           "relative bg-bg-2",
-          isFeatured ? "aspect-[3/4]" : "aspect-[4/3]",
+          isFeatured ? "aspect-[3/4]" : "aspect-[3/2] md:aspect-[4/3]",
         ].join(" ")}
       >
         {p.cover ? (

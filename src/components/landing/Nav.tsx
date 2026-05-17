@@ -217,7 +217,7 @@ export function Nav() {
               <a
                 href={l.href}
                 onClick={closeMenu}
-                className="font-serif text-[36px] tracking-tight text-ink min-h-11 inline-flex items-center"
+                className="font-serif text-[clamp(28px,7vw,36px)] tracking-tight text-ink min-h-11 inline-flex items-center"
               >
                 {t(l.key)}
               </a>

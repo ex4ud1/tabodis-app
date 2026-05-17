@@ -16,7 +16,7 @@ export function Hero({ t }: { t: TranslateFn }) {
       <h1 className="hero-display font-serif tracking-tighter text-ink mt-14 leading-[0.92] text-[clamp(48px,13vw,196px)]">
         {t("hero.h1_l1")}
         <br />
-        <span className="inline-block pl-[8%] md:pl-[18%]">
+        <span className="inline-block pl-[4%] md:pl-[12%] lg:pl-[18%]">
           {t("hero.h1_l2_pre")} <em className="italic text-accent-deep">{t("hero.h1_l2_em")}</em>
         </span>
         <br />

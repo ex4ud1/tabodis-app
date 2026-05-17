@@ -401,7 +401,7 @@ function Step1({
                 type="button"
                 onClick={() => onUrgency(b)}
                 className={[
-                  "px-5 py-4 rounded-2xl border text-left text-sm transition-all duration-200 flex items-center gap-3",
+                  "px-3.5 py-3 md:px-5 md:py-4 rounded-2xl border text-left text-sm transition-all duration-200 flex items-center gap-3",
                   on
                     ? "bg-ink text-paper border-ink"
                     : "border-line text-ink hover:border-ink",
@@ -462,7 +462,7 @@ function Step2({
             value={data.name}
             onChange={(e) => update("name", e.target.value)}
             placeholder={t("contact.name_ph")}
-            className="border-0 border-b border-line bg-transparent py-2.5 text-base outline-none focus:border-accent transition-colors"
+            className="min-h-11 border-0 border-b border-line bg-transparent py-2.5 text-base outline-none focus:border-accent transition-colors"
             style={{ fontSize: 16 }}
           />
         </div>
@@ -485,7 +485,7 @@ function Step2({
             }
             placeholder={t("contact.email_ph")}
             className={[
-              "border-0 border-b bg-transparent py-2.5 text-base outline-none transition-colors",
+              "min-h-11 border-0 border-b bg-transparent py-2.5 text-base outline-none transition-colors",
               emailError ? "border-danger" : "border-line focus:border-accent",
             ].join(" ")}
             style={{ fontSize: 16 }}
@@ -517,7 +517,7 @@ function Step2({
           }
           placeholder={t("contact.phone_ph")}
           className={[
-            "border-0 border-b bg-transparent py-2.5 text-base outline-none transition-colors",
+            "min-h-11 border-0 border-b bg-transparent py-2.5 text-base outline-none transition-colors",
             phoneError ? "border-danger" : "border-line focus:border-accent",
           ].join(" ")}
           style={{ fontSize: 16 }}
