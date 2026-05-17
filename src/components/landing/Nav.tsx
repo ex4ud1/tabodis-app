@@ -71,6 +71,7 @@ export function Nav() {
 
   return (
     <nav
+      data-site-nav
       className={[
         "sticky top-0 z-50 transition-[padding] duration-300",
         floating ? "py-3.5 px-4" : "px-4",

@@ -66,6 +66,7 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
     const prevOverflow = document.body.style.overflow;
     const prevPaddingRight = document.body.style.paddingRight;
     document.body.style.overflow = "hidden";
+    document.body.dataset.modalOpen = "true";
     if (scrollbarWidth > 0) {
       document.body.style.paddingRight = `${scrollbarWidth}px`;
     }
@@ -83,6 +84,7 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
     return () => {
       document.body.style.overflow = prevOverflow;
       document.body.style.paddingRight = prevPaddingRight;
+      delete document.body.dataset.modalOpen;
       document.removeEventListener("keydown", onKey);
     };
   }, [open, item, close, lightboxOpen]);
