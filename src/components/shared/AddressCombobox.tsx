@@ -8,6 +8,7 @@ export type AddressSuggestion = {
   street: string | null;
   housenumber: string | null;
   district: string | null;
+  locality: string | null;
   city: string | null;
   postcode: string | null;
   region: string | null;

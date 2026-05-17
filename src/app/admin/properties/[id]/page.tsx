@@ -51,6 +51,7 @@ export default async function EditProperty({
     building_type: data.building_type as string | null,
     floor: data.floor as number | null,
     total_floors: data.total_floors as number | null,
+    year_built: (data as { year_built?: number | null }).year_built ?? null,
     orientation: data.orientation as string | null,
     energy_certificate: data.energy_certificate as string | null,
     features,

@@ -193,6 +193,7 @@ export const propertySchema = z.object({
   building_type: optEnum(BUILDING_TYPES),
   floor: optInt(-5, 200),
   total_floors: optInt(1, 200),
+  year_built: optInt(1800, 2100),
   orientation: optEnum(ORIENTATIONS),
   energy_certificate: optEnum(ENERGY_CERTIFICATES),
   features: z.array(z.enum(AMENITIES_OPTIONS)).max(30).default([]),

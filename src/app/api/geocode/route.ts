@@ -76,6 +76,7 @@ type AddressSuggestion = {
   street: string | null;
   housenumber: string | null;
   district: string | null;
+  locality: string | null;
   city: string | null;
   postcode: string | null;
   region: string | null;
@@ -122,8 +123,10 @@ export async function GET(request: Request) {
   if (q.length < 2) {
     return NextResponse.json({ suggestions: [] });
   }
-  // Length cap to keep URL/processing bounded.
-  if (q.length > 80) {
+  // Length cap to keep URL/processing bounded. Photon accepts up to ~200 chars
+  // and full Spanish addresses (street + number + postcode + locality) often
+  // exceed 80, so we keep the cap generous for the address-typeahead flow.
+  if (q.length > 200) {
     return NextResponse.json({ error: "Consulta demasiado larga" }, { status: 400 });
   }
 
@@ -176,6 +179,10 @@ export async function GET(request: Request) {
           street: p.street ?? null,
           housenumber: p.housenumber ?? null,
           district: featureDistrict(f),
+          // Expose locality raw (not consumed by featureCity) so the admin form
+          // can use it as a "zona / barrio" fallback when district is null —
+          // common for Costa Blanca village addresses.
+          locality: p.locality ?? null,
           city: featureCity(f),
           postcode: p.postcode ?? null,
           region: p.state ?? p.county ?? null,

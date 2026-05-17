@@ -60,8 +60,16 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
   // Body scroll lock + ESC + arrow-key navigation.
   useEffect(() => {
     if (!open || !item) return;
+    // Compensate for the disappearing scrollbar so the page (and the modal
+    // centred against it) doesn't shift horizontally when overflow:hidden
+    // removes the gutter on desktop Windows / Chromium.
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
     document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
       else if (e.key === "ArrowRight" && item.images.length > 1) {
@@ -73,6 +81,7 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
     document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
       document.removeEventListener("keydown", onKey);
     };
   }, [open, item, close]);
@@ -108,6 +117,8 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
     });
   if (energy)
     facts.push({ label: t("props.detail_energy"), value: ENERGY_CERTIFICATE_LABELS[energy] });
+  if (item.year_built != null)
+    facts.push({ label: t("props.detail_year_built"), value: String(item.year_built) });
 
   return (
     <div
@@ -120,7 +131,7 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-paper text-ink rounded-[24px] w-full max-w-[1080px] max-h-[92vh] shadow-[0_40px_120px_-40px_rgba(28,39,71,0.55)]"
+        className="relative bg-paper text-ink rounded-[24px] w-full max-w-[1080px] max-h-[92dvh] shadow-[0_40px_120px_-40px_rgba(28,39,71,0.55)]"
         style={{ animation: "slide-up 0.35s cubic-bezier(0.2,0.8,0.2,1)" }}
       >
         <button
@@ -131,7 +142,7 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
           <Close />
         </button>
 
-        <div className="overflow-y-auto max-h-[92vh] rounded-[24px] grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
+        <div className="overflow-y-auto max-h-[92dvh] rounded-[24px] grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
           {/* ── Photo gallery ─────────────────────────────────────────── */}
           <div className="bg-bg-2 relative">
             <div className="relative aspect-[4/3] lg:aspect-auto lg:min-h-[420px]">

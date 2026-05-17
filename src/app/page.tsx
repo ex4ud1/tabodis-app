@@ -62,7 +62,7 @@ export default async function HomePage() {
         <Contact />
       </main>
       <Footer />
-      <ChatFab whatsapp={process.env.NEXT_PUBLIC_WHATSAPP} />
+      <ChatFab whatsapp={process.env.NEXT_PUBLIC_WHATSAPP ?? "+34624121047"} />
       <ScrollProgressAndBackTop />
       <Reveal />
       <CookieBanner />

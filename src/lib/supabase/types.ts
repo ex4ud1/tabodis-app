@@ -110,6 +110,7 @@ export type Database = {
           status: string | null
           title: string
           total_floors: number | null
+          year_built: number | null
           type: string
           updated_at: string | null
           workspace_id: string
@@ -142,6 +143,7 @@ export type Database = {
           status?: string | null
           title: string
           total_floors?: number | null
+          year_built?: number | null
           type: string
           updated_at?: string | null
           workspace_id: string
@@ -174,6 +176,7 @@ export type Database = {
           status?: string | null
           title?: string
           total_floors?: number | null
+          year_built?: number | null
           type?: string
           updated_at?: string | null
           workspace_id?: string

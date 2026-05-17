@@ -38,6 +38,7 @@ async function fetchProperties(): Promise<PropertyItem[]> {
       building_type: string | null;
       floor: number | null;
       total_floors: number | null;
+      year_built: number | null;
       orientation: string | null;
       energy_certificate: string | null;
       features: string[] | null;
@@ -50,7 +51,7 @@ async function fetchProperties(): Promise<PropertyItem[]> {
     const { data, error } = (await supabase
       .from("properties")
       .select(
-        "id, slug, title, description, city, loc, price, type, bedrooms, bathrooms, m2, building_type, floor, total_floors, orientation, energy_certificate, features, lat, lng, location_radius_m, featured, images",
+        "id, slug, title, description, city, loc, price, type, bedrooms, bathrooms, m2, building_type, floor, total_floors, year_built, orientation, energy_certificate, features, lat, lng, location_radius_m, featured, images",
       )
       .eq("status", "live")
       .order("featured", { ascending: false })
@@ -74,6 +75,7 @@ async function fetchProperties(): Promise<PropertyItem[]> {
         building_type: p.building_type,
         floor: p.floor,
         total_floors: p.total_floors,
+        year_built: p.year_built,
         orientation: p.orientation,
         energy_certificate: p.energy_certificate,
         features: p.features ?? [],

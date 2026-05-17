@@ -23,6 +23,7 @@ export type PropertyItem = {
   building_type: string | null;
   floor: number | null;
   total_floors: number | null;
+  year_built: number | null;
   orientation: string | null;
   energy_certificate: string | null;
   features: string[];

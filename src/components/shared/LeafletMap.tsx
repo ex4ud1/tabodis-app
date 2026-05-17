@@ -57,8 +57,9 @@ export default function LeafletMap({
 
   // Init map once.
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-    const map = L.map(containerRef.current, {
+    const container = containerRef.current;
+    if (!container || mapRef.current) return;
+    const map = L.map(container, {
       center: lat != null && lng != null ? [lat, lng] : fallbackCentre,
       zoom: lat != null && lng != null ? pickedZoom : fallbackZoom,
       zoomControl: true,
@@ -71,7 +72,17 @@ export default function LeafletMap({
 
     mapRef.current = map;
 
+    // Leaflet caches the container's box at init. When the map is mounted
+    // inside a modal that animates open, or below a scrolled fold, it can
+    // measure 0 and never request tiles. Force a recompute after first paint
+    // and whenever the container resizes.
+    const raf = requestAnimationFrame(() => map.invalidateSize());
+    const ro = new ResizeObserver(() => map.invalidateSize());
+    ro.observe(container);
+
     return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
       markerRef.current = null;

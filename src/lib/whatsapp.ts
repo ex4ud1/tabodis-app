@@ -16,8 +16,9 @@ export function buildBookingWhatsAppLink({
   city?: string | null;
   language?: "es" | "uk" | "ru";
 }): string | null {
-  const raw = process.env.NEXT_PUBLIC_WHATSAPP;
-  if (!raw) return null;
+  // Default to the agency's production WhatsApp number so the CTA works even
+  // when the env var is missing (e.g. preview deploys without secrets).
+  const raw = process.env.NEXT_PUBLIC_WHATSAPP ?? "+34624121047";
   const phone = raw.replace(/\D/g, "");
   if (!phone) return null;
 

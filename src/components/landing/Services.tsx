@@ -3,9 +3,9 @@ import { Arrow } from "@/components/icons";
 
 export function Services({ t }: { t: TranslateFn }) {
   const items = [
-    { num: "01", title: t("services.s1_title"), desc: t("services.s1_desc") },
-    { num: "02", title: t("services.s2_title"), desc: t("services.s2_desc") },
-    { num: "03", title: t("services.s3_title"), desc: t("services.s3_desc") },
+    { num: "01", title: t("services.s1_title"), desc: t("services.s1_desc"), href: "#propiedades" },
+    { num: "02", title: t("services.s2_title"), desc: t("services.s2_desc"), href: "#proceso" },
+    { num: "03", title: t("services.s3_title"), desc: t("services.s3_desc"), href: "#proceso" },
   ];
   return (
     <section className="section wrap py-24" id="servicios">
@@ -31,7 +31,7 @@ export function Services({ t }: { t: TranslateFn }) {
             <h3 className="font-serif text-4xl leading-none tracking-tight mb-4">{s.title}</h3>
             <p className="text-sm leading-[1.55] text-ink-soft mb-8 flex-1">{s.desc}</p>
             <a
-              href="#contacto"
+              href={s.href}
               aria-label={`${t("services.aria_consult")} ${s.title}`}
               className="w-11 h-11 rounded-full bg-ink text-paper flex items-center justify-center self-start transition-all duration-300 group-hover:bg-accent group-hover:-rotate-45"
             >

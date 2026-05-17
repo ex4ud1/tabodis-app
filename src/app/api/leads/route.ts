@@ -43,8 +43,12 @@ export async function POST(request: Request) {
   // single-tenant workspace so the admin dashboard can see new leads.
   // The unknown-cast works around Supabase generated types collapsing to
   // `never[]` when the SSR wrapper is consumed outside of an admin context.
+  // Anon clients can INSERT (RLS policy in migration 0004) but not SELECT
+  // (migration 0005 restricts SELECT to authenticated). Chaining .select() here
+  // returned 0 rows and .single() raised PGRST116, surfacing as a false 500
+  // even when the row was actually inserted.
   const supabase = (await createServerClient()) as unknown as SupabaseClient<Database>;
-  const { data: inserted, error } = await supabase
+  const { error } = await supabase
     .from("leads")
     .insert({
       workspace_id: WORKSPACE_ID,
@@ -59,9 +63,7 @@ export async function POST(request: Request) {
       language: lead.language,
       source: "web",
       status: "new",
-    })
-    .select("id")
-    .single();
+    });
 
   if (error) {
     logSupabaseError("api/leads", error);
@@ -75,5 +77,5 @@ export async function POST(request: Request) {
     logSupabaseError("api/leads:email", err);
   }
 
-  return NextResponse.json({ ok: true, id: inserted?.id }, { status: 201 });
+  return NextResponse.json({ ok: true }, { status: 201 });
 }

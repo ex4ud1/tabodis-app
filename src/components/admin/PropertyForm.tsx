@@ -33,6 +33,7 @@ type Initial = {
   building_type?: string | null;
   floor?: number | null;
   total_floors?: number | null;
+  year_built?: number | null;
   orientation?: string | null;
   energy_certificate?: string | null;
   features?: string[];
@@ -148,6 +149,14 @@ export function PropertyForm({
               ]}
             />
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Field
+              name="year_built"
+              label="Año de construcción"
+              type="number"
+              defaultValue={i.year_built ?? ""}
+            />
+          </div>
         </Section>
 
         {/* ── Section 3 — Ubicación ─────────────────────────────────────── */}
@@ -189,9 +198,18 @@ export function PropertyForm({
             initialAddress={i.address ?? ""}
             onSelect={(s) => {
               if (s.city) setCity(s.city);
-              if (s.district) setLoc(s.district);
+              // Photon often omits district for Spanish villages; fall back to
+              // locality when it's a distinct sub-municipality (e.g. "La Olla"
+              // inside Altea). If both are missing, leave loc for manual edit.
+              const zona =
+                s.district ??
+                (s.locality && s.locality !== s.city ? s.locality : null);
+              if (zona) setLoc(zona);
               setLat(s.lat);
               setLng(s.lng);
+              // Reset to the Costa Blanca default privacy radius whenever a
+              // new address is picked. Admin can still drag the slider after.
+              setRadius(1500);
             }}
           />
 

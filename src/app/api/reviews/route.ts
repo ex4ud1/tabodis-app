@@ -37,8 +37,11 @@ export async function POST(request: Request) {
 
   const r = parsed.data;
   // See api/leads/route.ts for the cast rationale.
+  // Anon SELECT on reviews is blocked by migration 0005, so we deliberately
+  // skip .select().single() — the chained read returns 0 rows and falsely
+  // surfaces a 500 even on a successful insert.
   const supabase = (await createServerClient()) as unknown as SupabaseClient<Database>;
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("reviews")
     .insert({
       workspace_id: WORKSPACE_ID,
@@ -48,14 +51,12 @@ export async function POST(request: Request) {
       services: r.services,
       body: r.body,
       status: "pending",
-    })
-    .select("id")
-    .single();
+    });
 
   if (error) {
     logSupabaseError("api/reviews", error);
     return NextResponse.json({ error: "Could not save review" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, id: data?.id }, { status: 201 });
+  return NextResponse.json({ ok: true }, { status: 201 });
 }
