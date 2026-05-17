@@ -93,6 +93,7 @@ export const DICT: Record<Lang, Record<string, string>> = {
     "props.detail_gallery_prev": "Anterior",
     "props.detail_gallery_next": "Siguiente",
     "props.detail_no_photos": "Sin fotos",
+    "props.detail_view_larger": "Ver foto en grande",
     // Principles
     "principles.title_l1": "Por qué",
     "principles.title_em": "elegirnos",
@@ -339,6 +340,7 @@ export const DICT: Record<Lang, Record<string, string>> = {
     "props.detail_gallery_prev": "Попереднє",
     "props.detail_gallery_next": "Наступне",
     "props.detail_no_photos": "Без фото",
+    "props.detail_view_larger": "Переглянути фото більше",
     "principles.title_l1": "Чому саме",
     "principles.title_em": "ми",
     "principles.desc":
@@ -577,6 +579,7 @@ export const DICT: Record<Lang, Record<string, string>> = {
     "props.detail_gallery_prev": "Назад",
     "props.detail_gallery_next": "Вперёд",
     "props.detail_no_photos": "Без фото",
+    "props.detail_view_larger": "Посмотреть фото больше",
     "principles.title_l1": "Почему",
     "principles.title_em": "именно мы",
     "principles.desc":

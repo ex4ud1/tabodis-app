@@ -43,10 +43,11 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
   const open = Boolean(item);
 
   const [photoIdx, setPhotoIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  // Reset gallery when the open property changes.
   useEffect(() => {
     setPhotoIdx(0);
+    setLightboxOpen(false);
   }, [item?.id]);
 
   const close = useCallback(() => {
@@ -57,12 +58,27 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
     });
   }, [router, searchParams]);
 
-  // Body scroll lock + ESC + arrow-key navigation.
+  // Keyboard nav. The modal itself is non-blocking and does NOT lock body
+  // scroll — only the lightbox does (separate effect below).
   useEffect(() => {
     if (!open || !item) return;
-    // Compensate for the disappearing scrollbar so the page (and the modal
-    // centred against it) doesn't shift horizontally when overflow:hidden
-    // removes the gutter on desktop Windows / Chromium.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (lightboxOpen) setLightboxOpen(false);
+        else close();
+      } else if (e.key === "ArrowRight" && item.images.length > 1) {
+        setPhotoIdx((i) => (i + 1) % item.images.length);
+      } else if (e.key === "ArrowLeft" && item.images.length > 1) {
+        setPhotoIdx((i) => (i - 1 + item.images.length) % item.images.length);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, item, close, lightboxOpen]);
+
+  // Lock body scroll ONLY while the photo lightbox is open.
+  useEffect(() => {
+    if (!lightboxOpen) return;
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     const prevOverflow = document.body.style.overflow;
     const prevPaddingRight = document.body.style.paddingRight;
@@ -70,21 +86,11 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
     if (scrollbarWidth > 0) {
       document.body.style.paddingRight = `${scrollbarWidth}px`;
     }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-      else if (e.key === "ArrowRight" && item.images.length > 1) {
-        setPhotoIdx((i) => (i + 1) % item.images.length);
-      } else if (e.key === "ArrowLeft" && item.images.length > 1) {
-        setPhotoIdx((i) => (i - 1 + item.images.length) % item.images.length);
-      }
-    };
-    document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prevOverflow;
       document.body.style.paddingRight = prevPaddingRight;
-      document.removeEventListener("keydown", onKey);
     };
-  }, [open, item, close]);
+  }, [lightboxOpen]);
 
   if (!open || !item) return null;
 
@@ -120,46 +126,57 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
   if (item.year_built != null)
     facts.push({ label: t("props.detail_year_built"), value: String(item.year_built) });
 
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="property-detail-title"
-      onClick={close}
-      className="fixed inset-0 z-[70] bg-ink/60 backdrop-blur-sm flex items-center justify-center p-3 md:p-8"
-      style={{ animation: "fade-in 0.25s ease" }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative bg-paper text-ink rounded-[24px] w-full max-w-[1080px] max-h-[92dvh] overflow-hidden shadow-[0_40px_120px_-40px_rgba(28,39,71,0.55)]"
-        style={{ animation: "slide-up 0.35s cubic-bezier(0.2,0.8,0.2,1)" }}
-      >
-        <button
-          onClick={close}
-          aria-label={t("props.detail_close")}
-          className="absolute top-4 right-4 z-20 w-11 h-11 rounded-full bg-paper/95 border border-line text-ink hover:bg-ink hover:text-paper transition-all inline-flex items-center justify-center shadow-[0_8px_24px_-8px_rgba(28,39,71,0.35)]"
-        >
-          <Close />
-        </button>
+  const openLightbox = () => {
+    if (currentPhoto) setLightboxOpen(true);
+  };
 
-        <div className="overflow-y-auto rounded-[24px] grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
-          {/* ── Photo gallery ─────────────────────────────────────────── */}
-          <div className="bg-bg-2 relative">
-            <div className="relative aspect-[4/3] lg:aspect-auto lg:min-h-[420px]">
-              {currentPhoto ? (
-                <Image
-                  src={currentPhoto}
-                  alt={item.title}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 60vw"
-                  className="object-cover"
-                  priority
-                />
-              ) : (
-                <div className="absolute inset-0 grid place-items-center text-ink-soft text-sm font-mono uppercase tracking-widest">
-                  {t("props.detail_no_photos")}
-                </div>
-              )}
+  return (
+    <>
+      {/* Non-blocking floating card: wrapper is transparent and ignores
+          pointer events so nav + page beneath stay visible and interactive. */}
+      <div
+        role="dialog"
+        aria-modal="false"
+        aria-labelledby="property-detail-title"
+        className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none md:p-8"
+        style={{ animation: "fade-in 0.25s ease" }}
+      >
+        <div
+          className="pointer-events-auto relative bg-paper text-ink w-screen h-[100dvh] max-w-none max-h-none overflow-hidden md:w-full md:max-w-[1080px] md:h-auto md:max-h-[85vh] md:rounded-[24px] md:ring-1 md:ring-line/60 md:shadow-[0_40px_120px_-40px_rgba(28,39,71,0.55)]"
+          style={{ animation: "slide-up 0.35s cubic-bezier(0.2,0.8,0.2,1)" }}
+        >
+          <button
+            onClick={close}
+            aria-label={t("props.detail_close")}
+            className="absolute top-4 right-4 z-20 w-11 h-11 rounded-full bg-paper/95 border border-line text-ink hover:bg-ink hover:text-paper transition-all inline-flex items-center justify-center shadow-[0_8px_24px_-8px_rgba(28,39,71,0.35)]"
+          >
+            <Close />
+          </button>
+
+          <div className="h-full overflow-y-auto md:max-h-[85vh] md:rounded-[24px]">
+            {/* ── Photos (top) ───────────────────────────────────────── */}
+            <div className="bg-bg-2 relative">
+              <button
+                type="button"
+                onClick={openLightbox}
+                aria-label={t("props.detail_view_larger")}
+                className="relative block w-full aspect-[4/3] md:aspect-[16/10] md:max-h-[60vh] cursor-zoom-in overflow-hidden"
+              >
+                {currentPhoto ? (
+                  <Image
+                    src={currentPhoto}
+                    alt={item.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 1080px"
+                    className="object-cover transition-transform duration-500 hover:scale-[1.02]"
+                    priority
+                  />
+                ) : (
+                  <div className="absolute inset-0 grid place-items-center text-ink-soft text-sm font-mono uppercase tracking-widest">
+                    {t("props.detail_no_photos")}
+                  </div>
+                )}
+              </button>
 
               {photoCount > 1 && (
                 <>
@@ -181,110 +198,127 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
                   >
                     <Arrow size={16} />
                   </button>
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-ink/70 text-paper text-[11px] font-mono">
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-ink/70 text-paper text-[11px] font-mono pointer-events-none">
                     {photoIdx + 1} / {photoCount}
                   </div>
                 </>
               )}
-            </div>
 
-            {photoCount > 1 && (
-              <div className="flex gap-1.5 overflow-x-auto px-3 py-3 bg-bg-2">
-                {item.images.map((src, i) => (
-                  <button
-                    key={src}
-                    type="button"
-                    onClick={() => setPhotoIdx(i)}
-                    aria-current={i === photoIdx}
-                    className={[
-                      "relative w-20 h-16 flex-shrink-0 rounded-md overflow-hidden border-2 transition-all",
-                      i === photoIdx ? "border-accent" : "border-transparent opacity-70 hover:opacity-100",
-                    ].join(" ")}
-                  >
-                    <Image
-                      src={src}
-                      alt=""
-                      fill
-                      sizes="80px"
-                      className="object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ── Info panel ────────────────────────────────────────────── */}
-          <div className="p-7 md:p-9 flex flex-col gap-5">
-            <div>
-              <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-ink-soft">
-                <Pin /> {item.city}
-                {item.loc && item.loc !== item.city ? ` · ${item.loc}` : ""}
-              </span>
-              <h2
-                id="property-detail-title"
-                className="font-serif text-[clamp(28px,3.5vw,42px)] leading-tight tracking-tight mt-2"
-              >
-                {item.title}
-              </h2>
-              <div className="font-serif text-3xl text-ink mt-2">
-                {formatPrice(item.price, item.type)}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 py-4 border-y border-line-soft">
-              <Stat label={t("props.bed")} value={item.bedrooms} />
-              <Stat label={t("props.bath")} value={item.bathrooms} />
-              <Stat label={t("props.m2")} value={item.m2} />
-            </div>
-
-            {facts.length > 0 && (
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                {facts.map((f) => (
-                  <div key={f.label} className="flex justify-between border-b border-line-soft py-1.5">
-                    <dt className="text-ink-soft">{f.label}</dt>
-                    <dd className="text-ink font-medium">{f.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-
-            {item.description && (
-              <div>
-                <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mb-2">
-                  {t("props.detail_description")}
-                </div>
-                <p className="text-sm text-ink leading-[1.6] whitespace-pre-wrap">
-                  {item.description}
-                </p>
-              </div>
-            )}
-
-            {item.features.length > 0 && (
-              <div>
-                <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mb-2">
-                  {t("props.detail_amenities")}
-                </div>
-                <ul className="flex flex-wrap gap-1.5">
-                  {item.features.map((f) => (
-                    <li
-                      key={f}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-line text-[12px] text-ink"
+              {photoCount > 1 && (
+                <div className="flex gap-1.5 overflow-x-auto px-3 py-3 bg-bg-2">
+                  {item.images.map((src, i) => (
+                    <button
+                      key={src}
+                      type="button"
+                      onClick={() => setPhotoIdx(i)}
+                      aria-current={i === photoIdx}
+                      className={[
+                        "relative w-20 h-16 flex-shrink-0 rounded-md overflow-hidden border-2 transition-all",
+                        i === photoIdx
+                          ? "border-accent"
+                          : "border-transparent opacity-70 hover:opacity-100",
+                      ].join(" ")}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                      {f}
-                    </li>
+                      <Image
+                        src={src}
+                        alt=""
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                      />
+                    </button>
                   ))}
-                </ul>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
 
-            {item.lat != null && item.lng != null && (
+            {/* ── Info (middle) ──────────────────────────────────────── */}
+            <div className="p-6 md:p-9 flex flex-col gap-5">
               <div>
+                <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-ink-soft">
+                  <Pin /> {item.city}
+                  {item.loc && item.loc !== item.city ? ` · ${item.loc}` : ""}
+                </span>
+                <h2
+                  id="property-detail-title"
+                  className="font-serif text-[clamp(28px,3.5vw,42px)] leading-tight tracking-tight mt-2"
+                >
+                  {item.title}
+                </h2>
+                <div className="font-serif text-3xl text-ink mt-2">
+                  {formatPrice(item.price, item.type)}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 py-4 border-y border-line-soft">
+                <Stat label={t("props.bed")} value={item.bedrooms} />
+                <Stat label={t("props.bath")} value={item.bathrooms} />
+                <Stat label={t("props.m2")} value={item.m2} />
+              </div>
+
+              {facts.length > 0 && (
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  {facts.map((f) => (
+                    <div
+                      key={f.label}
+                      className="flex justify-between border-b border-line-soft py-1.5"
+                    >
+                      <dt className="text-ink-soft">{f.label}</dt>
+                      <dd className="text-ink font-medium">{f.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+
+              {item.description && (
+                <div>
+                  <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mb-2">
+                    {t("props.detail_description")}
+                  </div>
+                  <p className="text-sm text-ink leading-[1.6] whitespace-pre-wrap">
+                    {item.description}
+                  </p>
+                </div>
+              )}
+
+              {item.features.length > 0 && (
+                <div>
+                  <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mb-2">
+                    {t("props.detail_amenities")}
+                  </div>
+                  <ul className="flex flex-wrap gap-1.5">
+                    {item.features.map((f) => (
+                      <li
+                        key={f}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-line text-[12px] text-ink"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {whatsappHref && (
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary self-start mt-2"
+                >
+                  {t("props.book_visit")} <Arrow size={14} />
+                </a>
+              )}
+            </div>
+
+            {/* ── Map (bottom) ───────────────────────────────────────── */}
+            {item.lat != null && item.lng != null && (
+              <div className="px-6 md:px-9 pb-6 md:pb-9">
                 <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mb-2">
                   {t("props.detail_location")}
                 </div>
-                <div className="rounded-2xl overflow-hidden border border-line h-48">
+                <div className="rounded-2xl overflow-hidden border border-line h-72 md:h-96">
                   <PropertyMap
                     lat={item.lat}
                     lng={item.lng}
@@ -294,21 +328,79 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
                 </div>
               </div>
             )}
-
-            {whatsappHref && (
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary self-start mt-2"
-              >
-                {t("props.book_visit")} <Arrow size={14} />
-              </a>
-            )}
           </div>
         </div>
       </div>
-    </div>
+
+      {/* ── Photo lightbox (z-[80], blocking overlay) ───────────────── */}
+      {lightboxOpen && currentPhoto && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={item.title}
+          onClick={() => setLightboxOpen(false)}
+          className="fixed inset-0 z-[80] bg-ink/95 flex items-center justify-center p-4 md:p-10"
+          style={{ animation: "fade-in 0.2s ease" }}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightboxOpen(false);
+            }}
+            aria-label={t("props.detail_close")}
+            className="absolute top-4 right-4 z-10 w-12 h-12 rounded-full bg-paper/95 border border-line text-ink hover:bg-paper transition-all inline-flex items-center justify-center"
+          >
+            <Close />
+          </button>
+
+          <div
+            className="relative w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative w-full h-full max-w-[95vw] max-h-[88vh]">
+              <Image
+                src={currentPhoto}
+                alt={item.title}
+                fill
+                sizes="95vw"
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+
+          {photoCount > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPhotoIdx((i) => (i - 1 + photoCount) % photoCount);
+                }}
+                aria-label={t("props.detail_gallery_prev")}
+                className="absolute top-1/2 left-4 -translate-y-1/2 w-12 h-12 rounded-full bg-paper/95 border border-line text-ink hover:bg-paper transition-all inline-flex items-center justify-center"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPhotoIdx((i) => (i + 1) % photoCount);
+                }}
+                aria-label={t("props.detail_gallery_next")}
+                className="absolute top-1/2 right-4 -translate-y-1/2 w-12 h-12 rounded-full bg-paper/95 border border-line text-ink hover:bg-paper transition-all inline-flex items-center justify-center"
+              >
+                <Arrow size={18} />
+              </button>
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-paper/95 text-ink text-[11px] font-mono pointer-events-none">
+                {photoIdx + 1} / {photoCount}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
