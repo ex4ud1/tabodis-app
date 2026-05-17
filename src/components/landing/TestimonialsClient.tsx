@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Arrow, ArrowLeft, Close, Plus } from "@/components/icons";
 import { useLang } from "@/lib/i18n";
 import { CityCombobox } from "@/components/shared/CityCombobox";
+import { SPAIN_CITIES } from "@/lib/spain-cities";
 
 export type Testimonial = {
   id: string;
@@ -210,7 +211,7 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-paper text-ink rounded-[28px] p-8 md:p-11 max-w-[520px] w-full max-h-[90vh] overflow-y-auto relative"
+            className="bg-paper text-ink rounded-[28px] p-6 md:p-8 lg:p-11 max-w-[520px] w-full max-h-[90vh] overflow-y-auto relative"
             style={{ animation: "slide-up 0.35s cubic-bezier(0.2,0.8,0.2,1)" }}
           >
             <button
@@ -276,6 +277,7 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
                         required
                         placeholder="Alicante"
                         inputClassName="border-0 border-b border-line bg-transparent py-2.5 text-base outline-none focus:border-accent transition-colors w-full"
+                        staticSource={SPAIN_CITIES}
                       />
                     </Field>
                   </div>

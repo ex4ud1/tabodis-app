@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PhotoUploader } from "./PhotoUploader";
 import { DeletePropertyButton } from "./DeletePropertyButton";
 import { CityCombobox } from "@/components/shared/CityCombobox";
+import { SPAIN_CITIES } from "@/lib/spain-cities";
 import { AddressCombobox } from "@/components/shared/AddressCombobox";
 import { PropertyMap } from "@/components/shared/PropertyMap";
 import {
@@ -176,6 +177,7 @@ export function PropertyForm({
                 lngName="lng"
                 initialLat={lat}
                 initialLng={lng}
+                staticSource={SPAIN_CITIES}
                 required
                 placeholder="Empieza a escribir una ciudad…"
               />

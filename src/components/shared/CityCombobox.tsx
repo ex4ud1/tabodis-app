@@ -12,6 +12,13 @@ type Suggestion = {
   lng: number;
 };
 
+function normalize(s: string) {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
+
 export type CityComboboxProps = {
   /** Controlled value: just the city name string. */
   value: string;
@@ -35,6 +42,8 @@ export type CityComboboxProps = {
   className?: string;
   inputClassName?: string;
   disabled?: boolean;
+  /** When provided, filters this list locally instead of calling the geocode API. */
+  staticSource?: Suggestion[];
 };
 
 export function CityCombobox({
@@ -51,6 +60,7 @@ export function CityCombobox({
   className,
   inputClassName,
   disabled,
+  staticSource,
 }: CityComboboxProps) {
   const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,37 +76,51 @@ export function CityCombobox({
   // Track latest request so a slow response can't overwrite a newer one.
   const reqIdRef = useRef(0);
 
-  const search = useCallback(async (q: string) => {
-    const trimmed = q.trim();
-    if (trimmed.length < 2) {
-      setItems([]);
-      setLoading(false);
-      return;
-    }
-    const id = ++reqIdRef.current;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(trimmed)}`, {
-        headers: { Accept: "application/json" },
-      });
-      const json = (await res.json()) as { suggestions?: Suggestion[]; error?: string };
-      if (id !== reqIdRef.current) return;
-      if (!res.ok) {
-        setError(json.error ?? "Error de geocodificación");
+  const search = useCallback(
+    async (q: string) => {
+      const trimmed = q.trim();
+      if (trimmed.length < 2) {
         setItems([]);
-      } else {
-        setItems(json.suggestions ?? []);
-        setActive((json.suggestions ?? []).length > 0 ? 0 : -1);
+        setLoading(false);
+        return;
       }
-    } catch {
-      if (id !== reqIdRef.current) return;
-      setError("Sin conexión");
-      setItems([]);
-    } finally {
-      if (id === reqIdRef.current) setLoading(false);
-    }
-  }, []);
+
+      if (staticSource) {
+        const needle = normalize(trimmed);
+        const filtered = staticSource
+          .filter((s) => normalize(s.city).includes(needle) || normalize(s.label).includes(needle))
+          .slice(0, 6);
+        setItems(filtered);
+        setActive(filtered.length > 0 ? 0 : -1);
+        return;
+      }
+
+      const id = ++reqIdRef.current;
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(trimmed)}`, {
+          headers: { Accept: "application/json" },
+        });
+        const json = (await res.json()) as { suggestions?: Suggestion[]; error?: string };
+        if (id !== reqIdRef.current) return;
+        if (!res.ok) {
+          setError(json.error ?? "Error de geocodificación");
+          setItems([]);
+        } else {
+          setItems(json.suggestions ?? []);
+          setActive((json.suggestions ?? []).length > 0 ? 0 : -1);
+        }
+      } catch {
+        if (id !== reqIdRef.current) return;
+        setError("Sin conexión");
+        setItems([]);
+      } finally {
+        if (id === reqIdRef.current) setLoading(false);
+      }
+    },
+    [staticSource],
+  );
 
   // Debounce typeahead by 300 ms.
   useEffect(() => {
