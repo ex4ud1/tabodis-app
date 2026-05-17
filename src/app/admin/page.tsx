@@ -3,27 +3,96 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-async function counts() {
+type ActivityEvent = {
+  kind: "property" | "lead" | "review";
+  id: string;
+  label: string;
+  at: string;
+  href: string;
+};
+
+async function loadDashboard() {
   const supabase = createAdminClient();
-  const [pLive, pDraft, lNew, rPending, rApproved] = await Promise.all([
-    supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", "live"),
-    supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", "draft"),
-    supabase.from("leads").select("id", { count: "exact", head: true }).eq("status", "new"),
-    supabase.from("reviews").select("id", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("reviews").select("rating").eq("status", "approved"),
-  ]);
+  const oneWeekAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [pLive, pDraft, lNew, lWeek, lTotal, rPending, rApproved, lLatest, pLatest, rLatest] =
+    await Promise.all([
+      supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", "live"),
+      supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", "draft"),
+      supabase.from("leads").select("id", { count: "exact", head: true }).eq("status", "new"),
+      supabase
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", oneWeekAgoIso),
+      supabase.from("leads").select("id", { count: "exact", head: true }),
+      supabase.from("reviews").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("reviews").select("rating").eq("status", "approved"),
+      supabase
+        .from("leads")
+        .select("id, name, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5),
+      supabase
+        .from("properties")
+        .select("id, title, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5),
+      supabase
+        .from("reviews")
+        .select("id, author_name, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5),
+    ]);
+
   const ratings = (rApproved.data ?? []) as { rating: number }[];
   const avgRating =
     ratings.length > 0
       ? ratings.reduce((a, r) => a + (r.rating ?? 0), 0) / ratings.length
       : null;
+
+  const events: ActivityEvent[] = [];
+  for (const l of (lLatest.data ?? []) as { id: string; name: string; created_at: string | null }[]) {
+    if (l.created_at)
+      events.push({
+        kind: "lead",
+        id: l.id,
+        label: `Nuevo lead: ${l.name}`,
+        at: l.created_at,
+        href: "/admin/leads",
+      });
+  }
+  for (const p of (pLatest.data ?? []) as { id: string; title: string; created_at: string | null }[]) {
+    if (p.created_at)
+      events.push({
+        kind: "property",
+        id: p.id,
+        label: `Propiedad: ${p.title}`,
+        at: p.created_at,
+        href: `/admin/properties/${p.id}`,
+      });
+  }
+  for (const r of (rLatest.data ?? []) as { id: string; author_name: string; created_at: string | null }[]) {
+    if (r.created_at)
+      events.push({
+        kind: "review",
+        id: r.id,
+        label: `Reseña de ${r.author_name}`,
+        at: r.created_at,
+        href: "/admin/reviews",
+      });
+  }
+  events.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+
   return {
     propsLive: pLive.count ?? 0,
     propsDraft: pDraft.count ?? 0,
     leadsNew: lNew.count ?? 0,
+    leadsThisWeek: lWeek.count ?? 0,
+    leadsTotal: lTotal.count ?? 0,
     reviewsPending: rPending.count ?? 0,
     avgRating,
     reviewCount: ratings.length,
+    activity: events.slice(0, 5),
   };
 }
 
@@ -50,18 +119,34 @@ function StarIcon() {
     </svg>
   );
 }
-function ChartIcon() {
+function ActivityIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-      <line x1="18" y1="20" x2="18" y2="10" strokeLinecap="round" />
-      <line x1="12" y1="20" x2="12" y2="4" strokeLinecap="round" />
-      <line x1="6" y1="20" x2="6" y2="14" strokeLinecap="round" />
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
+function eventDot(kind: ActivityEvent["kind"]) {
+  if (kind === "lead") return "bg-amber-500";
+  if (kind === "property") return "bg-blue-500";
+  return "bg-violet-500";
+}
+
+function formatRelative(iso: string) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60_000);
+  if (mins < 1) return "ahora";
+  if (mins < 60) return `${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days} d`;
+  return new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+}
+
 export default async function Dashboard() {
-  const c = await counts();
+  const c = await loadDashboard();
 
   const today = new Date().toLocaleDateString("es-ES", {
     weekday: "long",
@@ -78,12 +163,11 @@ export default async function Dashboard() {
         <p className="text-ink-soft text-sm mt-2 capitalize">{today}</p>
       </div>
 
-      {/* Stat tiles */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {/* Propiedades */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Tile 1 — Propiedades */}
         <Link
           href="/admin/properties"
-          className="group bg-paper border border-line-soft rounded-2xl p-5 hover:border-blue-400 hover:shadow-lg transition-all flex flex-col gap-4"
+          className="group bg-paper border border-line-soft rounded-2xl p-5 hover:border-blue-400 hover:shadow-lg transition-all flex flex-col gap-4 min-h-[210px]"
         >
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -93,23 +177,28 @@ export default async function Dashboard() {
               Ver →
             </span>
           </div>
-          <div>
-            <div className="font-serif text-5xl text-ink leading-none">{c.propsLive}</div>
-            <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mt-1.5">
-              Publicadas
+          <div className="mt-auto">
+            <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mb-2">
+              Propiedades
             </div>
-            {c.propsDraft > 0 && (
-              <div className="text-[11px] text-amber-600 mt-1">
-                {c.propsDraft} en borrador
-              </div>
-            )}
+            <div className="flex items-baseline gap-3">
+              <span className="font-serif text-5xl text-ink leading-none">{c.propsLive}</span>
+              <span className="text-xs text-ink-soft">publicadas</span>
+            </div>
+            <div className="text-[11px] text-ink-soft mt-2">
+              {c.propsDraft > 0 ? (
+                <span className="text-amber-600">{c.propsDraft} en borrador</span>
+              ) : (
+                "Sin borradores"
+              )}
+            </div>
           </div>
         </Link>
 
-        {/* Leads */}
+        {/* Tile 2 — Leads */}
         <Link
           href="/admin/leads"
-          className="group bg-paper border border-line-soft rounded-2xl p-5 hover:border-amber-400 hover:shadow-lg transition-all flex flex-col gap-4"
+          className="group bg-paper border border-line-soft rounded-2xl p-5 hover:border-amber-400 hover:shadow-lg transition-all flex flex-col gap-4 min-h-[210px]"
         >
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -119,21 +208,27 @@ export default async function Dashboard() {
               Ver →
             </span>
           </div>
-          <div>
-            <div className="font-serif text-5xl text-ink leading-none">{c.leadsNew}</div>
-            <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mt-1.5">
-              Leads nuevos
+          <div className="mt-auto">
+            <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mb-2">
+              Leads
             </div>
-            {c.leadsNew > 0 && (
-              <div className="text-[11px] text-amber-600 mt-1">Requieren atención</div>
-            )}
+            <div className="flex items-baseline gap-3">
+              <span className="font-serif text-5xl text-ink leading-none">{c.leadsThisWeek}</span>
+              <span className="text-xs text-ink-soft">esta semana</span>
+            </div>
+            <div className="text-[11px] text-ink-soft mt-2">
+              {c.leadsNew > 0 ? (
+                <span className="text-amber-600">{c.leadsNew} sin contactar · </span>
+              ) : null}
+              {c.leadsTotal} en total
+            </div>
           </div>
         </Link>
 
-        {/* Reseñas */}
+        {/* Tile 3 — Reseñas */}
         <Link
           href="/admin/reviews"
-          className="group bg-paper border border-line-soft rounded-2xl p-5 hover:border-violet-400 hover:shadow-lg transition-all flex flex-col gap-4"
+          className="group bg-paper border border-line-soft rounded-2xl p-5 hover:border-violet-400 hover:shadow-lg transition-all flex flex-col gap-4 min-h-[210px]"
         >
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
@@ -143,125 +238,61 @@ export default async function Dashboard() {
               Ver →
             </span>
           </div>
-          <div>
-            <div className="font-serif text-5xl text-ink leading-none">{c.reviewsPending}</div>
-            <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mt-1.5">
-              Reseñas pendientes
+          <div className="mt-auto">
+            <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mb-2">
+              Reseñas
             </div>
-            {c.reviewsPending > 0 && (
-              <div className="text-[11px] text-violet-600 mt-1">Pendientes de moderar</div>
-            )}
+            <div className="flex items-baseline gap-3">
+              <span className="font-serif text-5xl text-ink leading-none">
+                {c.avgRating ? c.avgRating.toFixed(1) : "—"}
+              </span>
+              <span className="text-xs text-ink-soft">★ promedio</span>
+            </div>
+            <div className="text-[11px] text-ink-soft mt-2">
+              {c.reviewsPending > 0 ? (
+                <span className="text-violet-600">{c.reviewsPending} pendientes · </span>
+              ) : null}
+              {c.reviewCount} aprobadas
+            </div>
           </div>
         </Link>
 
-        {/* Rating */}
-        <Link
-          href="/admin/reviews"
-          className="group bg-paper border border-line-soft rounded-2xl p-5 hover:border-emerald-400 hover:shadow-lg transition-all flex flex-col gap-4"
-        >
+        {/* Tile 4 — Actividad reciente */}
+        <div className="bg-paper border border-line-soft rounded-2xl p-5 flex flex-col gap-3 min-h-[210px]">
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <ChartIcon />
+              <ActivityIcon />
             </div>
-            <span className="font-mono text-[9px] tracking-widest uppercase text-ink-soft/60 group-hover:text-emerald-500 transition-colors">
-              Ver →
+            <span className="font-mono text-[9px] tracking-widest uppercase text-ink-soft/60">
+              Últimos 5
             </span>
           </div>
-          <div>
-            <div className="font-serif text-5xl text-ink leading-none">
-              {c.avgRating ? c.avgRating.toFixed(1) : "—"}
-            </div>
-            <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft mt-1.5">
-              Rating medio
-            </div>
-            {c.reviewCount > 0 && (
-              <div className="text-[11px] text-ink-soft mt-1">{c.reviewCount} reseñas</div>
-            )}
+          <div className="font-mono text-[10px] tracking-widest uppercase text-ink-soft">
+            Actividad reciente
           </div>
-        </Link>
-      </div>
-
-      {/* Section overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-paper border border-line-soft rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-              <BuildingIcon />
-            </div>
-            <h2 className="font-mono text-[10px] tracking-widest uppercase text-ink-soft">Propiedades</h2>
-          </div>
-          <div className="flex flex-col gap-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-ink-soft">Publicadas</span>
-              <span className="font-medium text-ink">{c.propsLive}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-ink-soft">Borradores</span>
-              <span className="font-medium text-ink">{c.propsDraft}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-ink-soft">Total</span>
-              <span className="font-medium text-ink">{c.propsLive + c.propsDraft}</span>
-            </div>
-          </div>
-          <Link
-            href="/admin/properties/new"
-            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-[12px] font-medium hover:bg-blue-700 transition-colors"
-          >
-            + Nueva propiedad
-          </Link>
-        </div>
-
-        <div className="bg-paper border border-line-soft rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-              <UsersIcon />
-            </div>
-            <h2 className="font-mono text-[10px] tracking-widest uppercase text-ink-soft">Leads</h2>
-          </div>
-          <div className="flex flex-col gap-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-ink-soft">Nuevos</span>
-              <span className={`font-medium ${c.leadsNew > 0 ? "text-amber-600" : "text-ink"}`}>
-                {c.leadsNew}
-              </span>
-            </div>
-          </div>
-          <Link
-            href="/admin/leads"
-            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white text-[12px] font-medium hover:bg-amber-600 transition-colors"
-          >
-            Ver todos los leads
-          </Link>
-        </div>
-
-        <div className="bg-paper border border-line-soft rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center">
-              <StarIcon />
-            </div>
-            <h2 className="font-mono text-[10px] tracking-widest uppercase text-ink-soft">Reseñas</h2>
-          </div>
-          <div className="flex flex-col gap-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-ink-soft">Pendientes</span>
-              <span className={`font-medium ${c.reviewsPending > 0 ? "text-violet-600" : "text-ink"}`}>
-                {c.reviewsPending}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-ink-soft">Rating medio</span>
-              <span className="font-medium text-ink">
-                {c.avgRating ? `${c.avgRating.toFixed(1)} ★` : "—"}
-              </span>
-            </div>
-          </div>
-          <Link
-            href="/admin/reviews"
-            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-[12px] font-medium hover:bg-violet-700 transition-colors"
-          >
-            Moderar reseñas
-          </Link>
+          {c.activity.length === 0 ? (
+            <p className="text-xs text-ink-soft mt-2">Sin actividad reciente.</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5 mt-0.5">
+              {c.activity.map((e) => (
+                <li key={`${e.kind}-${e.id}`}>
+                  <Link
+                    href={e.href}
+                    className="group flex items-center gap-2 text-[12px] text-ink hover:text-accent-deep transition-colors"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${eventDot(e.kind)}`}
+                    />
+                    <span className="truncate flex-1">{e.label}</span>
+                    <span className="text-[10px] text-ink-soft font-mono whitespace-nowrap">
+                      {formatRelative(e.at)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </>

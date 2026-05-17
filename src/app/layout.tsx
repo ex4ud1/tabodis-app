@@ -3,6 +3,7 @@ import { Instrument_Serif, Manrope, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getServerLang } from "@/lib/lang-server";
+import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 const instrumentSerif = Instrument_Serif({

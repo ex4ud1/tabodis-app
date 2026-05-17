@@ -38,7 +38,7 @@ export function imageUrlsToStoragePaths(urls: unknown, bucket: string): string[]
 /**
  * Format a price as Spanish-locale euros.
  */
-export function formatPrice(value: number, kind: "venta" | "alquiler" | "lujo" = "venta"): string {
+export function formatPrice(value: number, kind: "venta" | "alquiler" = "venta"): string {
   if (kind === "alquiler") {
     return `€${value.toLocaleString("es-ES")}/mes`;
   }

@@ -33,6 +33,7 @@ export default async function EditProperty({
   };
 
   const imgs = Array.isArray(data.images) ? (data.images as string[]) : [];
+  const features = Array.isArray(data.features) ? (data.features as string[]) : [];
   const initial = {
     title: data.title as string,
     description: data.description as string | null,
@@ -40,9 +41,19 @@ export default async function EditProperty({
     type: data.type as string,
     city: data.city as string,
     loc: data.loc as string | null,
+    address: data.address as string | null,
+    lat: data.lat as number | null,
+    lng: data.lng as number | null,
+    location_radius_m: data.location_radius_m as number | null,
     bedrooms: data.bedrooms as number | null,
     bathrooms: data.bathrooms as number | null,
     m2: data.m2 as number | null,
+    building_type: data.building_type as string | null,
+    floor: data.floor as number | null,
+    total_floors: data.total_floors as number | null,
+    orientation: data.orientation as string | null,
+    energy_certificate: data.energy_certificate as string | null,
+    features,
     status: data.status as string,
     featured: data.featured as boolean | null,
     images: imgs,

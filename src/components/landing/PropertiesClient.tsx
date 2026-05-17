@@ -2,39 +2,50 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Arrow, HouseSearch, Pin } from "@/components/icons";
 import { formatPrice } from "@/lib/utils";
 import { useLang } from "@/lib/i18n";
+import { PropertyDetailModal } from "./PropertyDetailModal";
 
 export type PropertyItem = {
   id: string;
   slug: string;
   title: string;
+  description: string | null;
   city: string;
   loc: string;
   price: number;
-  type: "venta" | "alquiler" | "lujo";
+  type: "venta" | "alquiler";
   bedrooms: number;
   bathrooms: number;
   m2: number;
+  building_type: string | null;
+  floor: number | null;
+  total_floors: number | null;
+  orientation: string | null;
+  energy_certificate: string | null;
+  features: string[];
+  lat: number | null;
+  lng: number | null;
+  location_radius_m: number | null;
   featured: boolean;
   cover: string | null;
+  images: string[];
 };
 
-type TabKey = "all" | "sale" | "rent" | "lux";
+type TabKey = "all" | "sale" | "rent";
 
 const TAB_TYPE: Record<TabKey, PropertyItem["type"] | null> = {
   all: null,
   sale: "venta",
   rent: "alquiler",
-  lux: "lujo",
 };
 
 const TAB_LABEL_KEY: Record<TabKey, string> = {
   all: "props.tab_all",
   sale: "props.tab_sale",
   rent: "props.tab_rent",
-  lux: "props.tab_lux",
 };
 
 export function PropertiesClient({
@@ -45,6 +56,7 @@ export function PropertiesClient({
   cities: string[];
 }) {
   const { t } = useLang();
+  const router = useRouter();
   const [tab, setTab] = useState<TabKey>("all");
   const [cityFilter, setCityFilter] = useState<string[]>([]);
 
@@ -63,7 +75,13 @@ export function PropertiesClient({
     setTab("all");
     setCityFilter([]);
   };
-  const tabs: TabKey[] = ["all", "sale", "rent", "lux"];
+  const tabs: TabKey[] = ["all", "sale", "rent"];
+
+  const openProperty = (slug: string) => {
+    const sp = new URLSearchParams(window.location.search);
+    sp.set("property", slug);
+    router.replace(`${window.location.pathname}?${sp.toString()}`, { scroll: false });
+  };
 
   return (
     <section className="section wrap py-24" id="propiedades">
@@ -143,6 +161,7 @@ export function PropertiesClient({
               statBed={t("props.bed")}
               statBath={t("props.bath")}
               statM2={t("props.m2")}
+              onOpen={openProperty}
             />
           ))
         ) : (
@@ -171,6 +190,8 @@ export function PropertiesClient({
           </div>
         )}
       </div>
+
+      <PropertyDetailModal items={items} />
     </section>
   );
 }
@@ -184,6 +205,7 @@ function PropCard({
   statBed,
   statBath,
   statM2,
+  onOpen,
 }: {
   p: PropertyItem;
   isFeatured: boolean;
@@ -193,14 +215,20 @@ function PropCard({
   statBed: string;
   statBath: string;
   statM2: string;
+  onOpen: (slug: string) => void;
 }) {
   const tag = p.type === "alquiler" ? tagRent : tagSale;
   const isRent = p.type === "alquiler";
 
   return (
     <a
-      href={`#propiedades`}
-      data-prop-id={p.slug}
+      href={`?property=${encodeURIComponent(p.slug)}`}
+      onClick={(e) => {
+        // Allow ctrl/cmd-click or middle-click for opening in a new tab.
+        if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        onOpen(p.slug);
+      }}
       aria-label={`${ariaLabelPrefix} ${p.title}`}
       className={[
         "group relative bg-paper rounded-3xl border border-line-soft overflow-hidden flex flex-col transition-all duration-[0.4s] hover:-translate-y-1 hover:shadow-[0_24px_60px_-28px_rgba(28,39,71,0.25)]",

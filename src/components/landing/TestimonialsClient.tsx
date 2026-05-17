@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Arrow, ArrowLeft, Close, Plus } from "@/components/icons";
 import { useLang } from "@/lib/i18n";
+import { CityCombobox } from "@/components/shared/CityCombobox";
 
 export type Testimonial = {
   id: string;
@@ -215,7 +216,7 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
             <button
               onClick={closeReview}
               aria-label={t("testi.close")}
-              className="absolute top-5 right-5 w-9 h-9 rounded-full border border-line text-ink hover:bg-ink hover:text-paper transition-all"
+              className="absolute top-5 right-5 w-9 h-9 rounded-full border border-line text-ink hover:bg-ink hover:text-paper transition-all inline-flex items-center justify-center"
             >
               <Close />
             </button>
@@ -269,13 +270,12 @@ export function TestimonialsClient({ items }: { items: Testimonial[] }) {
                       />
                     </Field>
                     <Field label={t("testi.modal_city")}>
-                      <input
-                        required
-                        type="text"
+                      <CityCombobox
                         value={city}
-                        onChange={(e) => setCity(e.target.value)}
+                        onChange={setCity}
+                        required
                         placeholder="Alicante"
-                        className="border-0 border-b border-line bg-transparent py-2.5 text-base outline-none focus:border-accent transition-colors"
+                        inputClassName="border-0 border-b border-line bg-transparent py-2.5 text-base outline-none focus:border-accent transition-colors w-full"
                       />
                     </Field>
                   </div>

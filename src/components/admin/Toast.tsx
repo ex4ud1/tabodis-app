@@ -18,7 +18,11 @@ export function Toast({ ok }: { ok?: string }) {
   }, [ok]);
   if (!show || !ok || !MESSAGES[ok]) return null;
   return (
-    <div className="fixed bottom-6 right-6 z-50 bg-ink text-paper px-5 py-3 rounded-full shadow-[0_12px_30px_-10px_rgba(28,39,71,0.4)] text-sm font-medium animate-[slide-up_0.35s_cubic-bezier(0.2,0.8,0.2,1)]">
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 bg-ink text-paper px-7 py-4 rounded-2xl shadow-[0_24px_60px_-15px_rgba(28,39,71,0.45)] text-base font-medium animate-[toast-pop_0.3s_cubic-bezier(0.2,0.9,0.3,1)]"
+    >
       {MESSAGES[ok]}
     </div>
   );

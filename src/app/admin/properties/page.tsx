@@ -70,7 +70,7 @@ export default async function PropertiesAdmin({
                   </td>
                   <td className="p-4 text-ink-soft hidden md:table-cell">{p.city}</td>
                   <td className="p-4 text-ink-soft hidden md:table-cell capitalize">{p.type}</td>
-                  <td className="p-4 text-ink">{formatPrice(Number(p.price), p.type as "venta" | "alquiler" | "lujo")}</td>
+                  <td className="p-4 text-ink">{formatPrice(Number(p.price), p.type as "venta" | "alquiler")}</td>
                   <td className="p-4">
                     <span
                       className={[

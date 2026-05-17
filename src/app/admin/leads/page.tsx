@@ -3,15 +3,22 @@ import { setLeadStatus } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 
-const STATUSES = ["new", "contacted", "qualified", "closed"] as const;
-type Status = (typeof STATUSES)[number];
+const DB_STATUSES = ["new", "contacted", "qualified", "closed"] as const;
 
-const LABEL: Record<Status, string> = {
+const FILTERS = ["all", ...DB_STATUSES] as const;
+type Filter = (typeof FILTERS)[number];
+
+const LABEL: Record<Filter, string> = {
+  all: "Todas",
   new: "Nuevos",
   contacted: "Contactados",
   qualified: "Calificados",
   closed: "Cerrados",
 };
+
+function isFilter(v: string | undefined): v is Filter {
+  return !!v && (FILTERS as readonly string[]).includes(v);
+}
 
 function fmtBudget(k: number | null) {
   if (k === null || k === undefined) return "—";
@@ -23,7 +30,8 @@ export default async function LeadsAdmin({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  const { status: filter = "new" } = await searchParams;
+  const sp = await searchParams;
+  const filter: Filter = isFilter(sp.status) ? sp.status : "all";
   const supabase = createAdminClient();
   type Row = {
     id: string;
@@ -38,11 +46,14 @@ export default async function LeadsAdmin({
     status: string;
     created_at: string | null;
   };
-  const { data } = (await supabase
+  const baseQuery = supabase
     .from("leads")
-    .select("id, name, email, phone, services, budget, urgency, contact_methods, message, status, created_at")
-    .eq("status", filter)
-    .order("created_at", { ascending: false })) as { data: Row[] | null };
+    .select(
+      "id, name, email, phone, services, budget, urgency, contact_methods, message, status, created_at",
+    )
+    .order("created_at", { ascending: false });
+  const query = filter === "all" ? baseQuery : baseQuery.eq("status", filter);
+  const { data } = (await query) as { data: Row[] | null };
   const rows = data ?? [];
 
   return (
@@ -50,7 +61,7 @@ export default async function LeadsAdmin({
       <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
         <h1 className="font-serif text-5xl tracking-tight text-ink">Leads</h1>
         <div className="flex gap-1 bg-paper border border-line-soft p-1 rounded-full flex-wrap">
-          {STATUSES.map((s) => (
+          {FILTERS.map((s) => (
             <a
               key={s}
               href={`/admin/leads?status=${s}`}
@@ -85,6 +96,11 @@ export default async function LeadsAdmin({
                       </a>
                     </>
                   )}
+                  {filter === "all" && (
+                    <span className="ml-3 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-widest border border-line text-ink-soft">
+                      {LABEL[l.status as Filter] ?? l.status}
+                    </span>
+                  )}
                 </div>
                 <span className="font-mono text-[10px] tracking-widest uppercase text-ink-soft">
                   {l.created_at ? new Date(l.created_at).toLocaleString("es-ES") : ""}
@@ -102,7 +118,7 @@ export default async function LeadsAdmin({
                 </p>
               )}
               <div className="flex gap-2 mt-4 flex-wrap">
-                {STATUSES.filter((s) => s !== filter).map((s) => (
+                {DB_STATUSES.filter((s) => s !== l.status).map((s) => (
                   <form
                     key={s}
                     action={async () => {
@@ -114,7 +130,7 @@ export default async function LeadsAdmin({
                       type="submit"
                       className="text-[12px] border border-line rounded-full px-3 py-1 text-ink-soft hover:border-ink hover:text-ink transition-colors"
                     >
-                      → {LABEL[s]}
+                      → {LABEL[s as Filter]}
                     </button>
                   </form>
                 ))}
