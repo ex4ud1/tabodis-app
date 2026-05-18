@@ -136,12 +136,12 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
         aria-modal="true"
         aria-labelledby="property-detail-title"
         onClick={close}
-        className="fixed inset-0 z-[70] bg-ink/60 backdrop-blur-xl flex items-center justify-center p-3 md:p-8"
+        className="fixed inset-0 z-[70] bg-ink/60 backdrop-blur-xl flex items-stretch justify-stretch md:items-center md:justify-center md:p-8"
         style={{ animation: "fade-in 0.25s ease" }}
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="relative bg-paper text-ink w-screen h-[100dvh] max-w-none max-h-none overflow-hidden md:w-full md:max-w-[1080px] md:h-auto md:max-h-[85vh] md:rounded-[24px] md:ring-1 md:ring-line/60 shadow-[0_60px_180px_-40px_rgba(28,39,71,0.6)]"
+          className="relative bg-paper text-ink w-full h-full flex-shrink-0 overflow-hidden md:w-full md:max-w-[1080px] md:h-auto md:max-h-[85vh] md:rounded-[24px] md:ring-1 md:ring-line/60 shadow-[0_60px_180px_-40px_rgba(28,39,71,0.6)]"
           style={{ animation: "modal-pop 0.42s cubic-bezier(0.2,0.9,0.3,1.15) both" }}
         >
           <button

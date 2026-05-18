@@ -405,9 +405,12 @@
       transform: translate(-50%, -50%) scale(1);
     }
   }
-  /* Hide the site nav while the property modal is open — set by
-     PropertyDetailModal on document.body. */
-  body[data-modal-open="true"] [data-site-nav] {
+  /* Hide the site nav and any floating UI while the property modal is open
+     — set by PropertyDetailModal on document.body. */
+  body[data-modal-open="true"] [data-site-nav],
+  body[data-modal-open="true"] [data-floating-ui],
+  body[data-modal-open="true"] #back-top,
+  body[data-modal-open="true"] #scroll-progress {
     display: none;
   }
 
