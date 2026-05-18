@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Arrow, ArrowLeft, Close, Pin } from "@/components/icons";
 import { formatPrice } from "@/lib/utils";
@@ -44,10 +44,16 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
 
   const [photoIdx, setPhotoIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setPhotoIdx(0);
     setLightboxOpen(false);
+    // iOS Safari was opening the modal mid-content (focus auto-scroll
+    // quirk); force the inner scroll to top so the photo is visible first.
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
   }, [item?.id]);
 
   const close = useCallback(() => {
@@ -152,7 +158,10 @@ export function PropertyDetailModal({ items }: { items: PropertyItem[] }) {
             <Close />
           </button>
 
-          <div className="h-full overflow-y-auto md:max-h-[85vh] md:rounded-[24px]">
+          <div
+            ref={scrollRef}
+            className="h-full overflow-y-auto md:max-h-[85vh] md:rounded-[24px]"
+          >
             {/* ── Photos (top) ───────────────────────────────────────── */}
             <div className="bg-bg-2 relative">
               <button
